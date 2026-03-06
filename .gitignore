@@ -1,0 +1,4 @@
+# Only commit index.html — keep everything else private
+*
+!.gitignore
+!index.html
