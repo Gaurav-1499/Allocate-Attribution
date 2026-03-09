@@ -19309,9 +19309,11 @@ function AttributionDashboard() {
   const [activeScreen, setActiveScreen] = useState("mom");
   const [selectedStrategies, setSelectedStrategies] = useState(null);
   const [drillLevel, setDrillLevel] = useState("assetClass");
+  const [dynamicDrill, setDynamicDrill] = useState("assetClass");
   const [dynamicStart, setDynamicStart] = useState("");
   const [dynamicEnd, setDynamicEnd] = useState("");
   const [windowTab, setWindowTab] = useState("1M");
+  const [windowDrill, setWindowDrill] = useState("assetClass");
   const [sortCol, setSortCol] = useState("contribution");
   const [sortDir, setSortDir] = useState("desc");
   const [instrSearch, setInstrSearch] = useState("");
@@ -19538,6 +19540,7 @@ function AttributionDashboard() {
     if (recentMonths.length === 0) return null;
     const acMonthly = {};
     const catMonthly = {};
+    const instrMonthly = {};
     let totalMonthly = [];
 
     // Track weights for benchmark contribution
@@ -19549,17 +19552,23 @@ function AttributionDashboard() {
       const numStrats = mPeriods.length || 1;
       const acTotals = {};
       const catTotals = {};
+      const instrTotals = {};
       let monthTotal = 0;
       mPeriods.forEach(p => {
         p.rows.forEach(r => {
           acTotals[r.assetClass] = (acTotals[r.assetClass] || 0) + r.contribution;
           catTotals[r.category] = (catTotals[r.category] || 0) + r.contribution;
+          const iKey = r.instrument + "|||" + r.category + "|||" + r.assetClass;
+          instrTotals[iKey] = (instrTotals[iKey] || 0) + r.contribution;
           monthTotal += r.contribution;
           groupWeightSum[r.category] = (groupWeightSum[r.category] || 0) + r.weight;
           groupWeightCount[r.category] = (groupWeightCount[r.category] || 0) + 1;
           if (!groupACMap[r.category]) groupACMap[r.category] = r.assetClass;
           groupWeightSum["AC:" + r.assetClass] = (groupWeightSum["AC:" + r.assetClass] || 0) + r.weight;
           groupWeightCount["AC:" + r.assetClass] = (groupWeightCount["AC:" + r.assetClass] || 0) + 1;
+          groupWeightSum[iKey] = (groupWeightSum[iKey] || 0) + r.weight;
+          groupWeightCount[iKey] = (groupWeightCount[iKey] || 0) + 1;
+          if (!groupACMap[iKey]) groupACMap[iKey] = r.assetClass;
         });
       });
       Object.entries(acTotals).forEach(([k, v]) => {
@@ -19569,6 +19578,10 @@ function AttributionDashboard() {
       Object.entries(catTotals).forEach(([k, v]) => {
         if (!catMonthly[k]) catMonthly[k] = [];
         catMonthly[k].push(v / numStrats);
+      });
+      Object.entries(instrTotals).forEach(([k, v]) => {
+        if (!instrMonthly[k]) instrMonthly[k] = [];
+        instrMonthly[k].push(v / numStrats);
       });
       totalMonthly.push(monthTotal / numStrats);
     });
@@ -19606,9 +19619,29 @@ function AttributionDashboard() {
       const bmRet = isEquity ? eqBench : arbBench;
       benchByCat[cat] = bmRet !== null ? avgW * bmRet / 100 : null;
     });
+
+    // Instruments
+    const instruments = [];
+    Object.entries(instrMonthly).forEach(([k, rets]) => {
+      const [name, cat, ac] = k.split("|||");
+      const linked = recentMonths.length > 1 ? geometricLink(rets) : rets[0];
+      const avgW = groupWeightCount[k] ? groupWeightSum[k] / groupWeightCount[k] : 0;
+      const isEquity = ac === "Equity";
+      const bmRet = isEquity ? eqBench : arbBench;
+      const benchContrib = bmRet !== null ? avgW * bmRet / 100 : null;
+      instruments.push({
+        instrument: name,
+        category: cat,
+        assetClass: ac,
+        contribution: linked,
+        weight: avgW,
+        benchContrib
+      });
+    });
     return {
       byAC,
       byCat,
+      instruments,
       totalReturn,
       eqBench,
       arbBench,
@@ -20120,7 +20153,29 @@ function AttributionDashboard() {
       fontWeight: 700,
       color: contribColor(dynamicData.totalPortfolio - dynamicData.totalBlended)
     }
-  }, fmt(dynamicData.totalPortfolio - dynamicData.totalBlended))))), dynamicData && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, fmt(dynamicData.totalPortfolio - dynamicData.totalBlended))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...card,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "12px 20px",
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 600,
+      color: "#6B7280"
+    }
+  }, "Drill:"), [["assetClass", "Asset Class"], ["category", "Category"], ["instrument", "Instrument"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => {
+      setDynamicDrill(k);
+      setInstrPage(0);
+    },
+    style: tabStyle(dynamicDrill === k)
+  }, l))), dynamicData && /*#__PURE__*/React.createElement(React.Fragment, null, dynamicDrill !== "instrument" && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 2fr",
@@ -20168,11 +20223,15 @@ function AttributionDashboard() {
       fontWeight: 600,
       color: "#374151"
     }
-  }, "Category Attribution (Portfolio vs Benchmark)"), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+  }, dynamicDrill === "assetClass" ? "Asset Class" : "Category", " Attribution (Portfolio vs Benchmark)"), /*#__PURE__*/React.createElement(ResponsiveContainer, {
     width: "100%",
     height: 300
   }, /*#__PURE__*/React.createElement(BarChart, {
-    data: Object.entries(dynamicData.byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({
+    data: dynamicDrill === "assetClass" ? AC_ORDER.filter(ac => dynamicData.byAC[ac] !== undefined).map(ac => ({
+      name: ac,
+      portfolio: dynamicData.byAC[ac],
+      benchmark: dynamicData.benchByAC[ac] || 0
+    })) : Object.entries(dynamicData.byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({
       name: k,
       portfolio: v,
       benchmark: dynamicData.benchByCat[k] || 0
@@ -20223,7 +20282,7 @@ function AttributionDashboard() {
       fontWeight: 600,
       color: "#374151"
     }
-  }, "Instrument Detail (", sortedInstruments.length, ")"), /*#__PURE__*/React.createElement("input", {
+  }, dynamicDrill === "assetClass" ? "Asset Class" : dynamicDrill === "category" ? "Category" : "Instrument", " Detail"), dynamicDrill === "instrument" && /*#__PURE__*/React.createElement("input", {
     placeholder: "Search instruments...",
     value: instrSearch,
     onChange: e => {
@@ -20252,85 +20311,148 @@ function AttributionDashboard() {
       background: "#F9FAFB",
       borderBottom: "2px solid #E5E7EB"
     }
-  }, [["instrument", "Instrument"], ["category", "Category"], ["assetClass", "Asset Class"], ["weight", "Avg Weight"], ["contribution", "Portfolio"], ["benchContrib", "Benchmark"], ["active", "Active"]].map(([col, label]) => /*#__PURE__*/React.createElement("th", {
-    key: col,
-    onClick: () => {
-      if (col !== "active") {
-        setSortCol(col);
-        setSortDir(sortCol === col && sortDir === "desc" ? "asc" : "desc");
-      }
-    },
+  }, /*#__PURE__*/React.createElement("th", {
     style: {
       padding: "8px 12px",
-      textAlign: col === "contribution" || col === "weight" || col === "benchContrib" || col === "active" ? "right" : "left",
+      textAlign: "left",
       fontWeight: 600,
-      color: col === "benchContrib" ? "#EF4444" : col === "active" ? "#8B5CF6" : "#6B7280",
-      cursor: col !== "active" ? "pointer" : "default",
-      userSelect: "none"
+      color: "#6B7280"
     }
-  }, label, " ", sortCol === col ? sortDir === "desc" ? "↓" : "↑" : "")))), /*#__PURE__*/React.createElement("tbody", null, pagedInstruments.map((row, i) => {
-    const activeVal = row.benchContrib !== null ? row.contribution - row.benchContrib : null;
-    return /*#__PURE__*/React.createElement("tr", {
-      key: i,
-      style: {
-        borderBottom: "1px solid #F3F4F6",
-        background: i % 2 === 0 ? "white" : "#FAFBFC"
-      }
-    }, /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        fontWeight: 500
-      }
-    }, row.instrument), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        color: "#6B7280"
-      }
-    }, row.category), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px"
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        padding: "2px 8px",
-        borderRadius: 4,
-        fontSize: 11,
-        fontWeight: 500,
-        background: COLORS[row.assetClass] + "18",
-        color: COLORS[row.assetClass]
-      }
-    }, row.assetClass)), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        color: "#6B7280"
-      }
-    }, row.weight.toFixed(2), "%"), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        fontWeight: 600,
-        color: contribColor(row.contribution)
-      }
-    }, fmt(row.contribution)), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        color: "#EF4444"
-      }
-    }, row.benchContrib !== null ? fmt(row.benchContrib) : "—"), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        fontWeight: 600,
-        color: contribColor(activeVal)
-      }
-    }, activeVal !== null ? fmt(activeVal) : "—"));
-  })))), instrPages > 1 && /*#__PURE__*/React.createElement("div", {
+  }, dynamicDrill === "assetClass" ? "Asset Class" : dynamicDrill === "category" ? "Category" : "Instrument"), dynamicDrill === "instrument" && /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "8px 12px",
+      textAlign: "left",
+      fontWeight: 600,
+      color: "#6B7280"
+    }
+  }, "Category"), dynamicDrill === "instrument" && /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "8px 12px",
+      textAlign: "left",
+      fontWeight: 600,
+      color: "#6B7280"
+    }
+  }, "Asset Class"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "8px 12px",
+      textAlign: "right",
+      fontWeight: 600,
+      color: "#6B7280"
+    }
+  }, "Avg Weight"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "8px 12px",
+      textAlign: "right",
+      fontWeight: 600,
+      color: "#3B82F6"
+    }
+  }, "Portfolio"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "8px 12px",
+      textAlign: "right",
+      fontWeight: 600,
+      color: "#EF4444"
+    }
+  }, "Benchmark"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "8px 12px",
+      textAlign: "right",
+      fontWeight: 600,
+      color: "#8B5CF6"
+    }
+  }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, (() => {
+    let tableRows = [];
+    if (dynamicDrill === "assetClass") {
+      tableRows = AC_ORDER.filter(ac => dynamicData.byAC[ac] !== undefined).map(ac => ({
+        name: ac,
+        contribution: dynamicData.byAC[ac],
+        benchContrib: dynamicData.benchByAC[ac],
+        weight: dynamicData.instruments.filter(i => i.assetClass === ac).reduce((s, i) => s + i.weight, 0) / Math.max(1, dynamicData.instruments.filter(i => i.assetClass === ac).length)
+      }));
+    } else if (dynamicDrill === "category") {
+      tableRows = Object.entries(dynamicData.byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({
+        name: k,
+        contribution: v,
+        benchContrib: dynamicData.benchByCat[k],
+        weight: dynamicData.instruments.filter(i => i.category === k).reduce((s, i) => s + i.weight, 0) / Math.max(1, dynamicData.instruments.filter(i => i.category === k).length)
+      }));
+    } else {
+      tableRows = pagedInstruments;
+    }
+    return tableRows.map((row, i) => {
+      const bc = row.benchContrib;
+      const activeVal = bc !== null && bc !== undefined ? row.contribution - bc : null;
+      return /*#__PURE__*/React.createElement("tr", {
+        key: i,
+        style: {
+          borderBottom: "1px solid #F3F4F6",
+          background: i % 2 === 0 ? "white" : "#FAFBFC"
+        }
+      }, /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          fontWeight: 500
+        }
+      }, dynamicDrill === "assetClass" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+        style: {
+          display: "inline-block",
+          width: 10,
+          height: 10,
+          borderRadius: 2,
+          background: COLORS[row.name],
+          marginRight: 6
+        }
+      }), row.name) : row.name || row.instrument), dynamicDrill === "instrument" && /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          color: "#6B7280"
+        }
+      }, row.category), dynamicDrill === "instrument" && /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px"
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          padding: "2px 8px",
+          borderRadius: 4,
+          fontSize: 11,
+          fontWeight: 500,
+          background: COLORS[row.assetClass] + "18",
+          color: COLORS[row.assetClass]
+        }
+      }, row.assetClass)), /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          textAlign: "right",
+          fontFamily: "monospace",
+          color: "#6B7280"
+        }
+      }, row.weight.toFixed(2), "%"), /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          textAlign: "right",
+          fontFamily: "monospace",
+          fontWeight: 600,
+          color: contribColor(row.contribution)
+        }
+      }, fmt(row.contribution)), /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          textAlign: "right",
+          fontFamily: "monospace",
+          color: "#EF4444"
+        }
+      }, bc !== null && bc !== undefined ? fmt(bc) : "—"), /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          textAlign: "right",
+          fontFamily: "monospace",
+          fontWeight: 600,
+          color: contribColor(activeVal)
+        }
+      }, activeVal !== null ? fmt(activeVal) : "—"));
+    });
+  })()))), dynamicDrill === "instrument" && instrPages > 1 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "center",
@@ -20390,7 +20512,26 @@ function AttributionDashboard() {
       fontSize: 12,
       color: "#6B7280"
     }
-  }, "Using ", windowData.monthsUsed, " month", windowData.monthsUsed > 1 ? "s" : "", " of data")), windowData && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, "Using ", windowData.monthsUsed, " month", windowData.monthsUsed > 1 ? "s" : "", " of data")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...card,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "12px 20px",
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 600,
+      color: "#6B7280"
+    }
+  }, "Drill:"), [["assetClass", "Asset Class"], ["category", "Category"], ["instrument", "Instrument"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => setWindowDrill(k),
+    style: tabStyle(windowDrill === k)
+  }, l))), windowData && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "repeat(3, 1fr)",
@@ -20460,7 +20601,7 @@ function AttributionDashboard() {
       fontFamily: "monospace",
       marginTop: 6
     }
-  }, windowData.totalBlended !== null ? fmt(windowData.totalReturn - windowData.totalBlended) : "—"))), /*#__PURE__*/React.createElement("div", {
+  }, windowData.totalBlended !== null ? fmt(windowData.totalReturn - windowData.totalBlended) : "—"))), windowDrill !== "instrument" && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -20475,10 +20616,94 @@ function AttributionDashboard() {
       fontWeight: 600,
       color: "#374151"
     }
-  }, "Asset Class Attribution"), /*#__PURE__*/React.createElement("div", {
+  }, windowDrill === "assetClass" ? "Asset Class" : "Category", " Attribution"), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: "100%",
+    height: 300
+  }, /*#__PURE__*/React.createElement(BarChart, {
+    data: windowDrill === "assetClass" ? AC_ORDER.filter(ac => windowData.byAC[ac] !== undefined).map(ac => ({
+      name: ac,
+      portfolio: windowData.byAC[ac],
+      benchmark: windowData.benchByAC[ac] || 0
+    })) : Object.entries(windowData.byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({
+      name: k,
+      portfolio: v,
+      benchmark: windowData.benchByCat[k] || 0
+    })),
+    layout: "vertical",
+    margin: {
+      left: 120
+    }
+  }, /*#__PURE__*/React.createElement(CartesianGrid, {
+    strokeDasharray: "3 3",
+    stroke: "#F3F4F6"
+  }), /*#__PURE__*/React.createElement(XAxis, {
+    type: "number",
+    tick: {
+      fontSize: 11
+    },
+    tickFormatter: v => fmt(v)
+  }), /*#__PURE__*/React.createElement(YAxis, {
+    type: "category",
+    dataKey: "name",
+    tick: {
+      fontSize: 11
+    },
+    width: 110
+  }), /*#__PURE__*/React.createElement(Tooltip, {
+    formatter: v => fmt(v)
+  }), /*#__PURE__*/React.createElement(Bar, {
+    dataKey: "portfolio",
+    fill: "#3B82F6",
+    name: "Portfolio"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    dataKey: "benchmark",
+    fill: "#EF4444",
+    name: "Benchmark"
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: card
+  }, /*#__PURE__*/React.createElement("h3", {
     style: {
-      overflowY: "auto",
-      maxHeight: 300
+      margin: "0 0 12px",
+      fontSize: 15,
+      fontWeight: 600,
+      color: "#374151"
+    }
+  }, "Asset Class Share"), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: "100%",
+    height: 300
+  }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
+    data: AC_ORDER.filter(ac => windowData.byAC[ac]).map(ac => ({
+      name: ac,
+      value: Math.abs(windowData.byAC[ac]),
+      actual: windowData.byAC[ac]
+    })),
+    cx: "50%",
+    cy: "50%",
+    innerRadius: 60,
+    outerRadius: 110,
+    paddingAngle: 2,
+    dataKey: "value"
+  }, AC_ORDER.filter(ac => windowData.byAC[ac]).map(ac => /*#__PURE__*/React.createElement(Cell, {
+    key: ac,
+    fill: COLORS[ac]
+  }))), /*#__PURE__*/React.createElement(Tooltip, {
+    formatter: (v, name, entry) => [fmt(entry.payload.actual), name]
+  }), /*#__PURE__*/React.createElement(Legend, {
+    wrapperStyle: {
+      fontSize: 11
+    }
+  }))))), /*#__PURE__*/React.createElement("div", {
+    style: card
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      margin: "0 0 12px",
+      fontSize: 15,
+      fontWeight: 600,
+      color: "#374151"
+    }
+  }, windowDrill === "assetClass" ? "Asset Class" : windowDrill === "category" ? "Category" : "Instrument", " Detail"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowX: "auto"
     }
   }, /*#__PURE__*/React.createElement("table", {
     style: {
@@ -20492,6 +20717,20 @@ function AttributionDashboard() {
       borderBottom: "2px solid #E5E7EB"
     }
   }, /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "7px 12px",
+      textAlign: "left",
+      fontWeight: 600,
+      color: "#6B7280"
+    }
+  }, windowDrill === "assetClass" ? "Asset Class" : windowDrill === "category" ? "Category" : "Instrument"), windowDrill === "instrument" && /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "7px 12px",
+      textAlign: "left",
+      fontWeight: 600,
+      color: "#6B7280"
+    }
+  }, "Category"), windowDrill === "instrument" && /*#__PURE__*/React.createElement("th", {
     style: {
       padding: "7px 12px",
       textAlign: "left",
@@ -20503,103 +20742,9 @@ function AttributionDashboard() {
       padding: "7px 12px",
       textAlign: "right",
       fontWeight: 600,
-      color: "#3B82F6"
-    }
-  }, "Portfolio"), /*#__PURE__*/React.createElement("th", {
-    style: {
-      padding: "7px 12px",
-      textAlign: "right",
-      fontWeight: 600,
-      color: "#EF4444"
-    }
-  }, "Benchmark"), /*#__PURE__*/React.createElement("th", {
-    style: {
-      padding: "7px 12px",
-      textAlign: "right",
-      fontWeight: 600,
-      color: "#8B5CF6"
-    }
-  }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, AC_ORDER.filter(ac => windowData.byAC[ac] !== undefined).map((ac, i) => {
-    const port = windowData.byAC[ac];
-    const bench = windowData.benchByAC[ac];
-    const act = bench !== null && bench !== undefined ? port - bench : null;
-    return /*#__PURE__*/React.createElement("tr", {
-      key: ac,
-      style: {
-        borderBottom: "1px solid #F3F4F6",
-        background: i % 2 === 0 ? "white" : "#FAFBFC"
-      }
-    }, /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        fontWeight: 500
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        display: "inline-block",
-        width: 10,
-        height: 10,
-        borderRadius: 2,
-        background: COLORS[ac],
-        marginRight: 6
-      }
-    }), ac), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        fontWeight: 600,
-        color: contribColor(port)
-      }
-    }, fmt(port)), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        color: "#EF4444"
-      }
-    }, bench !== null && bench !== undefined ? fmt(bench) : "—"), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "7px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        fontWeight: 600,
-        color: contribColor(act)
-      }
-    }, act !== null ? fmt(act) : "—"));
-  }))))), /*#__PURE__*/React.createElement("div", {
-    style: card
-  }, /*#__PURE__*/React.createElement("h3", {
-    style: {
-      margin: "0 0 12px",
-      fontSize: 15,
-      fontWeight: 600,
-      color: "#374151"
-    }
-  }, "Category Breakdown"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      overflowY: "auto",
-      maxHeight: 300
-    }
-  }, /*#__PURE__*/React.createElement("table", {
-    style: {
-      width: "100%",
-      borderCollapse: "collapse",
-      fontSize: 12
-    }
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
-    style: {
-      background: "#F9FAFB",
-      borderBottom: "2px solid #E5E7EB"
-    }
-  }, /*#__PURE__*/React.createElement("th", {
-    style: {
-      padding: "7px 12px",
-      textAlign: "left",
-      fontWeight: 600,
       color: "#6B7280"
     }
-  }, "Category"), /*#__PURE__*/React.createElement("th", {
+  }, "Avg Weight"), /*#__PURE__*/React.createElement("th", {
     style: {
       padding: "7px 12px",
       textAlign: "right",
@@ -20620,44 +20765,99 @@ function AttributionDashboard() {
       fontWeight: 600,
       color: "#8B5CF6"
     }
-  }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, Object.entries(windowData.byCat).sort((a, b) => b[1] - a[1]).map(([cat, val], i) => {
-    const bench = windowData.benchByCat[cat];
-    const act = bench !== null && bench !== undefined ? val - bench : null;
-    return /*#__PURE__*/React.createElement("tr", {
-      key: cat,
-      style: {
-        borderBottom: "1px solid #F3F4F6",
-        background: i % 2 === 0 ? "white" : "#FAFBFC"
-      }
-    }, /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "6px 12px"
-      }
-    }, cat), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "6px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        fontWeight: 600,
-        color: contribColor(val)
-      }
-    }, fmt(val)), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "6px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        color: "#EF4444"
-      }
-    }, bench !== null && bench !== undefined ? fmt(bench) : "—"), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "6px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        fontWeight: 600,
-        color: contribColor(act)
-      }
-    }, act !== null ? fmt(act) : "—"));
-  }))))))))), /*#__PURE__*/React.createElement("div", {
+  }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, (() => {
+    let tableRows = [];
+    if (windowDrill === "assetClass") {
+      tableRows = AC_ORDER.filter(ac => windowData.byAC[ac] !== undefined).map(ac => ({
+        name: ac,
+        contribution: windowData.byAC[ac],
+        benchContrib: windowData.benchByAC[ac],
+        weight: windowData.instruments.filter(i => i.assetClass === ac).reduce((s, i) => s + i.weight, 0) / Math.max(1, windowData.instruments.filter(i => i.assetClass === ac).length)
+      }));
+    } else if (windowDrill === "category") {
+      tableRows = Object.entries(windowData.byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({
+        name: k,
+        contribution: v,
+        benchContrib: windowData.benchByCat[k],
+        weight: windowData.instruments.filter(i => i.category === k).reduce((s, i) => s + i.weight, 0) / Math.max(1, windowData.instruments.filter(i => i.category === k).length)
+      }));
+    } else {
+      tableRows = [...windowData.instruments].sort((a, b) => b.contribution - a.contribution);
+    }
+    return tableRows.map((row, i) => {
+      const bc = row.benchContrib;
+      const activeVal = bc !== null && bc !== undefined ? row.contribution - bc : null;
+      return /*#__PURE__*/React.createElement("tr", {
+        key: i,
+        style: {
+          borderBottom: "1px solid #F3F4F6",
+          background: i % 2 === 0 ? "white" : "#FAFBFC"
+        }
+      }, /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          fontWeight: 500
+        }
+      }, windowDrill === "assetClass" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+        style: {
+          display: "inline-block",
+          width: 10,
+          height: 10,
+          borderRadius: 2,
+          background: COLORS[row.name],
+          marginRight: 6
+        }
+      }), row.name) : row.name || row.instrument), windowDrill === "instrument" && /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          color: "#6B7280"
+        }
+      }, row.category), windowDrill === "instrument" && /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px"
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          padding: "2px 8px",
+          borderRadius: 4,
+          fontSize: 11,
+          fontWeight: 500,
+          background: COLORS[row.assetClass] + "18",
+          color: COLORS[row.assetClass]
+        }
+      }, row.assetClass)), /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          textAlign: "right",
+          fontFamily: "monospace",
+          color: "#6B7280"
+        }
+      }, row.weight.toFixed(2), "%"), /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          textAlign: "right",
+          fontFamily: "monospace",
+          fontWeight: 600,
+          color: contribColor(row.contribution)
+        }
+      }, fmt(row.contribution)), /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          textAlign: "right",
+          fontFamily: "monospace",
+          color: "#EF4444"
+        }
+      }, bc !== null && bc !== undefined ? fmt(bc) : "—"), /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "7px 12px",
+          textAlign: "right",
+          fontFamily: "monospace",
+          fontWeight: 600,
+          color: contribColor(activeVal)
+        }
+      }, activeVal !== null ? fmt(activeVal) : "—"));
+    });
+  })()))))))), /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: "1px solid #E5E7EB",
       background: "#F9FAFB",
