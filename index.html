@@ -17537,6 +17537,23 @@ function AttributionDashboard() {
     return ms;
   }, [periods]);
 
+  // Latest data date (across ALL periods, not just filtered)
+  const latestDataDate = useMemo(() => {
+    const allEndDates = RAW_DATA.periods.map(p => p.endDate).sort();
+    if (allEndDates.length === 0) return "N/A";
+    const d = allEndDates[allEndDates.length - 1];
+    const dt = new Date(d + "T00:00:00");
+    return dt.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  }, []);
+  const latestDataDateISO = useMemo(() => {
+    const allEndDates = RAW_DATA.periods.map(p => p.endDate).sort();
+    return allEndDates.length > 0 ? allEndDates[allEndDates.length - 1] : "";
+  }, []);
+
   // Benchmark maps
   const niftyTRMap = useMemo(() => buildBenchmarkMap(RAW_DATA.benchmarks.nifty50tr), []);
   const niftyArbMap = useMemo(() => buildBenchmarkMap(RAW_DATA.benchmarks.nifty50arb), []);
@@ -17862,9 +17879,25 @@ function AttributionDashboard() {
     style: {
       fontSize: 12,
       color: "#6B7280",
-      marginTop: 2
+      marginTop: 2,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      flexWrap: "wrap"
     }
-  }, periods.length > 0 && `${monthLabel(periods[0].startDate)} — ${monthLabel(periods[periods.length - 1].endDate)} · ${months.length} months · ${activeStrategies.length} strateg${activeStrategies.length === 1 ? "y" : "ies"}`)), /*#__PURE__*/React.createElement("div", {
+  }, periods.length > 0 && /*#__PURE__*/React.createElement("span", null, `${monthLabel(periods[0].startDate)} — ${monthLabel(periods[periods.length - 1].endDate)} · ${months.length} months · ${activeStrategies.length} strateg${activeStrategies.length === 1 ? "y" : "ies"}`), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 4,
+      background: "#FEF3C7",
+      color: "#92400E",
+      padding: "2px 10px",
+      borderRadius: 12,
+      fontWeight: 600,
+      fontSize: 11
+    }
+  }, "Data as of: ", latestDataDate))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6
@@ -17911,7 +17944,8 @@ function AttributionDashboard() {
       display: "flex",
       alignItems: "center",
       gap: 8,
-      padding: "12px 20px"
+      padding: "12px 20px",
+      flexWrap: "wrap"
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -17923,7 +17957,17 @@ function AttributionDashboard() {
     key: k,
     onClick: () => setDrillLevel(k),
     style: tabStyle(drillLevel === k)
-  }, l))), /*#__PURE__*/React.createElement("div", {
+  }, l)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: "auto",
+      fontSize: 11,
+      color: "#92400E",
+      background: "#FEF3C7",
+      padding: "3px 10px",
+      borderRadius: 10,
+      fontWeight: 600
+    }
+  }, "Data as of: ", latestDataDate)), /*#__PURE__*/React.createElement("div", {
     style: card
   }, /*#__PURE__*/React.createElement("h3", {
     style: {
@@ -18176,7 +18220,16 @@ function AttributionDashboard() {
       border: "1px solid #D1D5DB",
       fontSize: 13
     }
-  }), dynamicData && /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "#92400E",
+      background: "#FEF3C7",
+      padding: "3px 10px",
+      borderRadius: 10,
+      fontWeight: 600
+    }
+  }, "Data as of: ", latestDataDate), dynamicData && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 12,
       color: "#6B7280",
@@ -18425,7 +18478,8 @@ function AttributionDashboard() {
       display: "flex",
       alignItems: "center",
       gap: 8,
-      padding: "12px 20px"
+      padding: "12px 20px",
+      flexWrap: "wrap"
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -18437,7 +18491,16 @@ function AttributionDashboard() {
     key: w,
     onClick: () => setWindowTab(w),
     style: tabStyle(windowTab === w)
-  }, w)), windowData && /*#__PURE__*/React.createElement("span", {
+  }, w)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "#92400E",
+      background: "#FEF3C7",
+      padding: "3px 10px",
+      borderRadius: 10,
+      fontWeight: 600
+    }
+  }, "Data as of: ", latestDataDate), windowData && /*#__PURE__*/React.createElement("span", {
     style: {
       marginLeft: "auto",
       fontSize: 12,
