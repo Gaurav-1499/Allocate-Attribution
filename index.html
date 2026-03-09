@@ -17389,6 +17389,37 @@ const monthLabel = d => {
   });
 };
 
+// Strategy-specific benchmark weights: [Nifty50 TR weight, Nifty Arbitrage weight]
+const BENCH_WEIGHTS = {
+  "IONIC ALLOCATE PORTFOLIO AGGRESSIVE": [0.80, 0.20],
+  "IONIC ALLOCATE PORTFOLIO MODERATE": [0.50, 0.50],
+  "IONIC ALLOCATE PORTFOLIO EQUITY": [1.00, 0.00]
+};
+
+// Blended benchmark return for a strategy (or set of strategies)
+function blendedBench(eqBench, arbBench, activeStrategies) {
+  if (eqBench === null || arbBench === null) {
+    if (eqBench !== null) return eqBench; // fallback to eq only
+    return null;
+  }
+  // Average weights across active strategies
+  let wEq = 0,
+    wArb = 0,
+    count = 0;
+  activeStrategies.forEach(s => {
+    const w = BENCH_WEIGHTS[s];
+    if (w) {
+      wEq += w[0];
+      wArb += w[1];
+      count++;
+    }
+  });
+  if (count === 0) return eqBench;
+  wEq /= count;
+  wArb /= count;
+  return wEq * eqBench + wArb * arbBench;
+}
+
 // ─── Build benchmark day map with forward fill ───
 function buildBenchmarkMap(points) {
   if (!points || points.length === 0) return {};
@@ -17396,7 +17427,6 @@ function buildBenchmarkMap(points) {
   points.forEach(p => {
     map[p.date] = p.value;
   });
-  // Build full calendar from min to max date
   const dates = points.map(p => p.date).sort();
   const start = new Date(dates[0] + "T00:00:00");
   const end = new Date(dates[dates.length - 1] + "T00:00:00");
@@ -17417,7 +17447,6 @@ function benchReturn(bmMap, startDate, endDate) {
   const sv = bmMap[startDate];
   const ev = bmMap[endDate];
   if (sv && ev && sv !== 0) return (ev / sv - 1) * 100;
-  // Try nearest available dates
   const dates = Object.keys(bmMap).sort();
   const findNearest = (target, direction) => {
     if (direction === "before") {
@@ -17516,7 +17545,7 @@ const CustomTooltip = ({
 // ─── Main Dashboard ───
 function AttributionDashboard() {
   const [activeScreen, setActiveScreen] = useState("mom");
-  const [selectedStrategies, setSelectedStrategies] = useState(null); // null = all
+  const [selectedStrategies, setSelectedStrategies] = useState(null);
   const [drillLevel, setDrillLevel] = useState("assetClass");
   const [dynamicStart, setDynamicStart] = useState("");
   const [dynamicEnd, setDynamicEnd] = useState("");
@@ -17530,14 +17559,12 @@ function AttributionDashboard() {
   const strategies = useMemo(() => [...new Set(RAW_DATA.periods.map(p => p.strategy))].sort(), []);
   const activeStrategies = selectedStrategies || strategies;
   const periods = useMemo(() => RAW_DATA.periods.filter(p => activeStrategies.includes(p.strategy)).sort((a, b) => a.startDate.localeCompare(b.startDate)), [activeStrategies]);
-
-  // Unique months (by endDate)
   const months = useMemo(() => {
     const ms = [...new Set(periods.map(p => p.endDate))].sort();
     return ms;
   }, [periods]);
 
-  // Latest data date (across ALL periods, not just filtered)
+  // Latest data date
   const latestDataDate = useMemo(() => {
     const allEndDates = RAW_DATA.periods.map(p => p.endDate).sort();
     if (allEndDates.length === 0) return "N/A";
@@ -17548,10 +17575,6 @@ function AttributionDashboard() {
       month: "short",
       year: "numeric"
     });
-  }, []);
-  const latestDataDateISO = useMemo(() => {
-    const allEndDates = RAW_DATA.periods.map(p => p.endDate).sort();
-    return allEndDates.length > 0 ? allEndDates[allEndDates.length - 1] : "";
   }, []);
 
   // Benchmark maps
@@ -17570,28 +17593,42 @@ function AttributionDashboard() {
         endDate
       };
       const groups = {};
+      // Track weights and asset class for each group (for benchmark contribution)
+      const groupWeights = {};
+      const groupAC = {};
       monthPeriods.forEach(p => {
         p.rows.forEach(r => {
           const key = r[groupKey];
           groups[key] = (groups[key] || 0) + r.contribution;
+          groupWeights[key] = (groupWeights[key] || 0) + r.weight;
+          if (!groupAC[key]) groupAC[key] = r.assetClass;
           allGroups.add(key);
         });
       });
-      // Average across strategies if multiple
       const numStrats = monthPeriods.length || 1;
       Object.keys(groups).forEach(k => {
         entry[k] = groups[k] / numStrats;
       });
-      // Total
       entry._total = Object.values(groups).reduce((s, v) => s + v, 0) / numStrats;
 
-      // Benchmark returns
+      // Benchmark returns for this month
       const startDate = monthPeriods[0]?.startDate;
       if (startDate) {
         const eqBench = benchReturn(niftyTRMap, startDate, endDate);
         const arbBench = benchReturn(niftyArbMap, startDate, endDate);
         entry._eqBench = eqBench;
         entry._arbBench = arbBench;
+        // Blended benchmark for total level
+        entry._blendedBench = blendedBench(eqBench, arbBench, activeStrategies);
+
+        // Per-group benchmark contribution: avgWeight × relevantBenchmarkReturn / 100
+        Object.keys(groups).forEach(k => {
+          const avgWeight = (groupWeights[k] || 0) / numStrats;
+          // Equity asset class → Nifty 50 TR; everything else → Nifty Arbitrage
+          const isEquity = groupAC[k] === "Equity" || groupKey === "assetClass" && k === "Equity";
+          const bmReturn = isEquity ? eqBench : arbBench;
+          entry["_bc_" + k] = bmReturn !== null ? avgWeight * bmReturn / 100 : null;
+        });
       }
       result.push(entry);
     });
@@ -17601,20 +17638,15 @@ function AttributionDashboard() {
       data: result,
       groups: groupList
     };
-  }, [periods, months, drillLevel, niftyTRMap, niftyArbMap]);
+  }, [periods, months, drillLevel, niftyTRMap, niftyArbMap, activeStrategies]);
 
   // ─── Screen 2: Dynamic Date Range ───
   const dynamicData = useMemo(() => {
     if (!dynamicStart || !dynamicEnd) return null;
     const filteredPeriods = periods.filter(p => p.endDate >= dynamicStart && p.startDate <= dynamicEnd);
     if (filteredPeriods.length === 0) return null;
-
-    // Aggregate by asset class, category, instrument using geometric linking per month
     const byAC = {};
     const byCat = {};
-    const byInstr = {};
-
-    // Group periods by month for geometric linking
     const monthlyData = {};
     filteredPeriods.forEach(p => {
       const key = p.endDate;
@@ -17622,11 +17654,15 @@ function AttributionDashboard() {
       monthlyData[key].push(p);
     });
     const sortedMonths = Object.keys(monthlyData).sort();
-
-    // For each group, collect monthly returns then link them
     const acMonthly = {};
     const catMonthly = {};
     const instrMonthly = {};
+
+    // Track weights and asset classes for benchmark contribution
+    const groupWeightSum = {}; // cat/instr → total weight
+    const groupWeightCount = {}; // cat/instr → count
+    const groupACMap = {}; // cat/instr → asset class
+
     sortedMonths.forEach(m => {
       const mPeriods = monthlyData[m];
       const numStrats = mPeriods.length || 1;
@@ -17639,6 +17675,16 @@ function AttributionDashboard() {
           catTotals[r.category] = (catTotals[r.category] || 0) + r.contribution;
           const iKey = r.instrument + "|||" + r.category + "|||" + r.assetClass;
           instrTotals[iKey] = (instrTotals[iKey] || 0) + r.contribution;
+
+          // Track weights
+          groupWeightSum[r.category] = (groupWeightSum[r.category] || 0) + r.weight;
+          groupWeightCount[r.category] = (groupWeightCount[r.category] || 0) + 1;
+          if (!groupACMap[r.category]) groupACMap[r.category] = r.assetClass;
+          groupWeightSum[iKey] = (groupWeightSum[iKey] || 0) + r.weight;
+          groupWeightCount[iKey] = (groupWeightCount[iKey] || 0) + 1;
+          if (!groupACMap[iKey]) groupACMap[iKey] = r.assetClass;
+          groupWeightSum["AC:" + r.assetClass] = (groupWeightSum["AC:" + r.assetClass] || 0) + r.weight;
+          groupWeightCount["AC:" + r.assetClass] = (groupWeightCount["AC:" + r.assetClass] || 0) + 1;
         });
       });
       Object.entries(acTotals).forEach(([k, v]) => {
@@ -17662,35 +17708,47 @@ function AttributionDashboard() {
     Object.entries(catMonthly).forEach(([k, rets]) => {
       byCat[k] = sortedMonths.length > 1 ? geometricLink(rets) : rets[0];
     });
+
+    // Benchmark for the full period
+    const firstStart = filteredPeriods.reduce((min, p) => p.startDate < min ? p.startDate : min, "9999");
+    const lastEnd = filteredPeriods.reduce((max, p) => p.endDate > max ? p.endDate : max, "0000");
+    const eqBench = benchReturn(niftyTRMap, firstStart, lastEnd);
+    const arbBench = benchReturn(niftyArbMap, firstStart, lastEnd);
+    const totalBlended = blendedBench(eqBench, arbBench, activeStrategies);
+
+    // Per-AC benchmark contribution
+    const benchByAC = {};
+    Object.keys(byAC).forEach(ac => {
+      const avgW = groupWeightCount["AC:" + ac] ? groupWeightSum["AC:" + ac] / groupWeightCount["AC:" + ac] : 0;
+      const bmRet = ac === "Equity" ? eqBench : arbBench;
+      benchByAC[ac] = bmRet !== null ? avgW * bmRet / 100 : null;
+    });
+
+    // Per-category benchmark contribution
+    const benchByCat = {};
+    Object.keys(byCat).forEach(cat => {
+      const avgW = groupWeightCount[cat] ? groupWeightSum[cat] / groupWeightCount[cat] : 0;
+      const isEquity = groupACMap[cat] === "Equity";
+      const bmRet = isEquity ? eqBench : arbBench;
+      benchByCat[cat] = bmRet !== null ? avgW * bmRet / 100 : null;
+    });
     const instruments = [];
     Object.entries(instrMonthly).forEach(([k, rets]) => {
       const [name, cat, ac] = k.split("|||");
       const linked = sortedMonths.length > 1 ? geometricLink(rets) : rets[0];
-      // Get avg weight
-      let totalWeight = 0;
-      let weightCount = 0;
-      filteredPeriods.forEach(p => {
-        p.rows.forEach(r => {
-          if (r.instrument === name) {
-            totalWeight += r.weight;
-            weightCount++;
-          }
-        });
-      });
+      const avgW = groupWeightCount[k] ? groupWeightSum[k] / groupWeightCount[k] : 0;
+      const isEquity = ac === "Equity";
+      const bmRet = isEquity ? eqBench : arbBench;
+      const benchContrib = bmRet !== null ? avgW * bmRet / 100 : null;
       instruments.push({
         instrument: name,
         category: cat,
         assetClass: ac,
         contribution: linked,
-        weight: weightCount > 0 ? totalWeight / weightCount : 0
+        weight: avgW,
+        benchContrib
       });
     });
-
-    // Benchmark
-    const firstStart = filteredPeriods.reduce((min, p) => p.startDate < min ? p.startDate : min, "9999");
-    const lastEnd = filteredPeriods.reduce((max, p) => p.endDate > max ? p.endDate : max, "0000");
-    const eqBench = benchReturn(niftyTRMap, firstStart, lastEnd);
-    const arbBench = benchReturn(niftyArbMap, firstStart, lastEnd);
     const totalPortfolio = Object.values(byAC).reduce((s, v) => s + v, 0);
     return {
       byAC,
@@ -17698,9 +17756,12 @@ function AttributionDashboard() {
       instruments,
       totalPortfolio,
       eqBench,
-      arbBench
+      arbBench,
+      totalBlended,
+      benchByAC,
+      benchByCat
     };
-  }, [dynamicStart, dynamicEnd, periods, niftyTRMap, niftyArbMap]);
+  }, [dynamicStart, dynamicEnd, periods, niftyTRMap, niftyArbMap, activeStrategies]);
 
   // ─── Screen 3: Time Windows ───
   const windowData = useMemo(() => {
@@ -17713,11 +17774,14 @@ function AttributionDashboard() {
     const n = windows[windowTab] || 1;
     const recentMonths = months.slice(-n);
     if (recentMonths.length === 0) return null;
-
-    // Collect monthly data for each group
     const acMonthly = {};
     const catMonthly = {};
     let totalMonthly = [];
+
+    // Track weights for benchmark contribution
+    const groupWeightSum = {};
+    const groupWeightCount = {};
+    const groupACMap = {};
     recentMonths.forEach(endDate => {
       const mPeriods = periods.filter(p => p.endDate === endDate);
       const numStrats = mPeriods.length || 1;
@@ -17729,6 +17793,11 @@ function AttributionDashboard() {
           acTotals[r.assetClass] = (acTotals[r.assetClass] || 0) + r.contribution;
           catTotals[r.category] = (catTotals[r.category] || 0) + r.contribution;
           monthTotal += r.contribution;
+          groupWeightSum[r.category] = (groupWeightSum[r.category] || 0) + r.weight;
+          groupWeightCount[r.category] = (groupWeightCount[r.category] || 0) + 1;
+          if (!groupACMap[r.category]) groupACMap[r.category] = r.assetClass;
+          groupWeightSum["AC:" + r.assetClass] = (groupWeightSum["AC:" + r.assetClass] || 0) + r.weight;
+          groupWeightCount["AC:" + r.assetClass] = (groupWeightCount["AC:" + r.assetClass] || 0) + 1;
         });
       });
       Object.entries(acTotals).forEach(([k, v]) => {
@@ -17757,19 +17826,36 @@ function AttributionDashboard() {
     const lastEnd = recentMonths[recentMonths.length - 1];
     const eqBench = benchReturn(niftyTRMap, firstStart, lastEnd);
     const arbBench = benchReturn(niftyArbMap, firstStart, lastEnd);
+    const totalBlended = blendedBench(eqBench, arbBench, activeStrategies);
 
-    // Weighted benchmark (use equity weight from portfolio)
-    // Simplified: use Nifty50TR as primary benchmark
+    // Per-AC benchmark contribution
+    const benchByAC = {};
+    Object.keys(byAC).forEach(ac => {
+      const avgW = groupWeightCount["AC:" + ac] ? groupWeightSum["AC:" + ac] / groupWeightCount["AC:" + ac] : 0;
+      const bmRet = ac === "Equity" ? eqBench : arbBench;
+      benchByAC[ac] = bmRet !== null ? avgW * bmRet / 100 : null;
+    });
 
+    // Per-category benchmark contribution
+    const benchByCat = {};
+    Object.keys(byCat).forEach(cat => {
+      const avgW = groupWeightCount[cat] ? groupWeightSum[cat] / groupWeightCount[cat] : 0;
+      const isEquity = groupACMap[cat] === "Equity";
+      const bmRet = isEquity ? eqBench : arbBench;
+      benchByCat[cat] = bmRet !== null ? avgW * bmRet / 100 : null;
+    });
     return {
       byAC,
       byCat,
       totalReturn,
       eqBench,
       arbBench,
+      totalBlended,
+      benchByAC,
+      benchByCat,
       monthsUsed: recentMonths.length
     };
-  }, [windowTab, months, periods, niftyTRMap, niftyArbMap]);
+  }, [windowTab, months, periods, niftyTRMap, niftyArbMap, activeStrategies]);
 
   // ─── Strategy Filter ───
   const toggleStrategy = s => {
@@ -17805,8 +17891,6 @@ function AttributionDashboard() {
   // ─── Set default dynamic dates ───
   const defaultStart = periods.length > 0 ? periods[0].startDate : "";
   const defaultEnd = periods.length > 0 ? periods[periods.length - 1].endDate : "";
-
-  // Init dynamic dates on first render
   if (!dynamicStart && defaultStart) {
     setTimeout(() => {
       setDynamicStart(defaultStart);
@@ -17844,6 +17928,16 @@ function AttributionDashboard() {
     color: active ? "#3B82F6" : "#6B7280",
     transition: "all 0.15s"
   });
+  const asOfBadge = /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "#92400E",
+      background: "#FEF3C7",
+      padding: "3px 10px",
+      borderRadius: 10,
+      fontWeight: 600
+    }
+  }, "Data as of: ", latestDataDate);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -17959,15 +18053,9 @@ function AttributionDashboard() {
     style: tabStyle(drillLevel === k)
   }, l)), /*#__PURE__*/React.createElement("span", {
     style: {
-      marginLeft: "auto",
-      fontSize: 11,
-      color: "#92400E",
-      background: "#FEF3C7",
-      padding: "3px 10px",
-      borderRadius: 10,
-      fontWeight: 600
+      marginLeft: "auto"
     }
-  }, "Data as of: ", latestDataDate)), /*#__PURE__*/React.createElement("div", {
+  }, asOfBadge)), /*#__PURE__*/React.createElement("div", {
     style: card
   }, /*#__PURE__*/React.createElement("h3", {
     style: {
@@ -18013,8 +18101,8 @@ function AttributionDashboard() {
     fill: COLORS[g] || `hsl(${momData.groups.indexOf(g) * 37}, 60%, 55%)`
   })), drillLevel === "assetClass" && /*#__PURE__*/React.createElement(Line, {
     type: "monotone",
-    dataKey: "_eqBench",
-    name: "Nifty 50 TR",
+    dataKey: "_blendedBench",
+    name: "Blended Benchmark",
     stroke: "#EF4444",
     strokeWidth: 2,
     strokeDasharray: "6 3",
@@ -18058,12 +18146,22 @@ function AttributionDashboard() {
   }, "Month"), momData.groups.map(g => /*#__PURE__*/React.createElement("th", {
     key: g,
     style: {
-      padding: "8px 12px",
-      textAlign: "right",
+      padding: "8px 6px",
+      textAlign: "center",
       fontWeight: 600,
-      color: "#6B7280"
+      color: "#6B7280",
+      fontSize: 11
     }
-  }, g)), /*#__PURE__*/React.createElement("th", {
+  }, /*#__PURE__*/React.createElement("div", null, g), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "center",
+      gap: 2,
+      fontSize: 9,
+      color: "#9CA3AF",
+      marginTop: 2
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Port"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", null, "Bench"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", null, "Active")))), /*#__PURE__*/React.createElement("th", {
     style: {
       padding: "8px 12px",
       textAlign: "right",
@@ -18077,7 +18175,7 @@ function AttributionDashboard() {
       fontWeight: 600,
       color: "#EF4444"
     }
-  }, "Nifty 50"), /*#__PURE__*/React.createElement("th", {
+  }, "Benchmark"), /*#__PURE__*/React.createElement("th", {
     style: {
       padding: "8px 12px",
       textAlign: "right",
@@ -18085,8 +18183,8 @@ function AttributionDashboard() {
       color: "#8B5CF6"
     }
   }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, momData.data.map((row, i) => {
-    const bench = row._eqBench;
-    const active = row._total - (bench || 0);
+    const bench = row._blendedBench;
+    const activeRet = row._total - (bench || 0);
     return /*#__PURE__*/React.createElement("tr", {
       key: i,
       style: {
@@ -18101,15 +18199,34 @@ function AttributionDashboard() {
         left: 0,
         background: i % 2 === 0 ? "white" : "#FAFBFC"
       }
-    }, row.month), momData.groups.map(g => /*#__PURE__*/React.createElement("td", {
-      key: g,
-      style: {
-        padding: "8px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        color: contribColor(row[g] || 0)
-      }
-    }, fmt(row[g] || 0))), /*#__PURE__*/React.createElement("td", {
+    }, row.month), momData.groups.map(g => {
+      const port = row[g] || 0;
+      const bc = row["_bc_" + g];
+      const act = bc !== null && bc !== undefined ? port - bc : null;
+      return /*#__PURE__*/React.createElement("td", {
+        key: g,
+        style: {
+          padding: "6px 4px",
+          textAlign: "center",
+          fontFamily: "monospace",
+          fontSize: 10,
+          lineHeight: 1.6
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          color: contribColor(port)
+        }
+      }, fmt(port)), " / ", /*#__PURE__*/React.createElement("span", {
+        style: {
+          color: "#EF4444"
+        }
+      }, bc !== null && bc !== undefined ? fmt(bc) : "—"), " / ", /*#__PURE__*/React.createElement("span", {
+        style: {
+          color: contribColor(act),
+          fontWeight: 600
+        }
+      }, act !== null ? fmt(act) : "—"));
+    }), /*#__PURE__*/React.createElement("td", {
       style: {
         padding: "8px 12px",
         textAlign: "right",
@@ -18130,13 +18247,13 @@ function AttributionDashboard() {
         textAlign: "right",
         fontFamily: "monospace",
         fontWeight: 600,
-        color: contribColor(active)
+        color: contribColor(activeRet)
       }
-    }, bench !== null && bench !== undefined ? fmt(active) : "—"));
+    }, bench !== null && bench !== undefined ? fmt(activeRet) : "—"));
   }), (() => {
     const cumReturns = momData.data.map(r => r._total);
     const linked = geometricLink(cumReturns);
-    const benchReturns = momData.data.map(r => r._eqBench).filter(v => v !== null && v !== undefined);
+    const benchReturns = momData.data.map(r => r._blendedBench).filter(v => v !== null && v !== undefined);
     const linkedBench = benchReturns.length > 0 ? geometricLink(benchReturns) : null;
     const activeReturn = linkedBench !== null ? linked - linkedBench : null;
     return /*#__PURE__*/React.createElement("tr", {
@@ -18220,16 +18337,7 @@ function AttributionDashboard() {
       border: "1px solid #D1D5DB",
       fontSize: 13
     }
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: "#92400E",
-      background: "#FEF3C7",
-      padding: "3px 10px",
-      borderRadius: 10,
-      fontWeight: 600
-    }
-  }, "Data as of: ", latestDataDate), dynamicData && /*#__PURE__*/React.createElement("span", {
+  }), asOfBadge, dynamicData && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 12,
       color: "#6B7280",
@@ -18240,17 +18348,17 @@ function AttributionDashboard() {
       fontWeight: 700,
       color: contribColor(dynamicData.totalPortfolio)
     }
-  }, fmt(dynamicData.totalPortfolio)), dynamicData.eqBench !== null && /*#__PURE__*/React.createElement(React.Fragment, null, " \xB7 Nifty 50: ", /*#__PURE__*/React.createElement("span", {
+  }, fmt(dynamicData.totalPortfolio)), dynamicData.totalBlended !== null && /*#__PURE__*/React.createElement(React.Fragment, null, " \xB7 Benchmark: ", /*#__PURE__*/React.createElement("span", {
     style: {
       fontWeight: 700,
       color: "#EF4444"
     }
-  }, fmt(dynamicData.eqBench))), dynamicData.eqBench !== null && /*#__PURE__*/React.createElement(React.Fragment, null, " \xB7 Active: ", /*#__PURE__*/React.createElement("span", {
+  }, fmt(dynamicData.totalBlended))), dynamicData.totalBlended !== null && /*#__PURE__*/React.createElement(React.Fragment, null, " \xB7 Active: ", /*#__PURE__*/React.createElement("span", {
     style: {
       fontWeight: 700,
-      color: contribColor(dynamicData.totalPortfolio - dynamicData.eqBench)
+      color: contribColor(dynamicData.totalPortfolio - dynamicData.totalBlended)
     }
-  }, fmt(dynamicData.totalPortfolio - dynamicData.eqBench))))), dynamicData && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, fmt(dynamicData.totalPortfolio - dynamicData.totalBlended))))), dynamicData && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 2fr",
@@ -18298,13 +18406,14 @@ function AttributionDashboard() {
       fontWeight: 600,
       color: "#374151"
     }
-  }, "Category Contributions"), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+  }, "Category Attribution (Portfolio vs Benchmark)"), /*#__PURE__*/React.createElement(ResponsiveContainer, {
     width: "100%",
     height: 300
   }, /*#__PURE__*/React.createElement(BarChart, {
     data: Object.entries(dynamicData.byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({
       name: k,
-      contribution: v
+      portfolio: v,
+      benchmark: dynamicData.benchByCat[k] || 0
     })),
     layout: "vertical",
     margin: {
@@ -18329,12 +18438,14 @@ function AttributionDashboard() {
   }), /*#__PURE__*/React.createElement(Tooltip, {
     formatter: v => fmt(v)
   }), /*#__PURE__*/React.createElement(Bar, {
-    dataKey: "contribution",
-    fill: "#3B82F6"
-  }, Object.entries(dynamicData.byCat).sort((a, b) => b[1] - a[1]).map(([k, v], i) => /*#__PURE__*/React.createElement(Cell, {
-    key: i,
-    fill: v >= 0 ? "#3B82F6" : "#EF4444"
-  }))))))), /*#__PURE__*/React.createElement("div", {
+    dataKey: "portfolio",
+    fill: "#3B82F6",
+    name: "Portfolio"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    dataKey: "benchmark",
+    fill: "#EF4444",
+    name: "Benchmark"
+  }))))), /*#__PURE__*/React.createElement("div", {
     style: card
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -18379,65 +18490,85 @@ function AttributionDashboard() {
       background: "#F9FAFB",
       borderBottom: "2px solid #E5E7EB"
     }
-  }, [["instrument", "Instrument"], ["category", "Category"], ["assetClass", "Asset Class"], ["contribution", "Contribution"], ["weight", "Avg Weight"]].map(([col, label]) => /*#__PURE__*/React.createElement("th", {
+  }, [["instrument", "Instrument"], ["category", "Category"], ["assetClass", "Asset Class"], ["weight", "Avg Weight"], ["contribution", "Portfolio"], ["benchContrib", "Benchmark"], ["active", "Active"]].map(([col, label]) => /*#__PURE__*/React.createElement("th", {
     key: col,
     onClick: () => {
-      setSortCol(col);
-      setSortDir(sortCol === col && sortDir === "desc" ? "asc" : "desc");
+      if (col !== "active") {
+        setSortCol(col);
+        setSortDir(sortCol === col && sortDir === "desc" ? "asc" : "desc");
+      }
     },
     style: {
       padding: "8px 12px",
-      textAlign: col === "contribution" || col === "weight" ? "right" : "left",
+      textAlign: col === "contribution" || col === "weight" || col === "benchContrib" || col === "active" ? "right" : "left",
       fontWeight: 600,
-      color: "#6B7280",
-      cursor: "pointer",
+      color: col === "benchContrib" ? "#EF4444" : col === "active" ? "#8B5CF6" : "#6B7280",
+      cursor: col !== "active" ? "pointer" : "default",
       userSelect: "none"
     }
-  }, label, " ", sortCol === col ? sortDir === "desc" ? "↓" : "↑" : "")))), /*#__PURE__*/React.createElement("tbody", null, pagedInstruments.map((row, i) => /*#__PURE__*/React.createElement("tr", {
-    key: i,
-    style: {
-      borderBottom: "1px solid #F3F4F6",
-      background: i % 2 === 0 ? "white" : "#FAFBFC"
-    }
-  }, /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "7px 12px",
-      fontWeight: 500
-    }
-  }, row.instrument), /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "7px 12px",
-      color: "#6B7280"
-    }
-  }, row.category), /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "7px 12px"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      padding: "2px 8px",
-      borderRadius: 4,
-      fontSize: 11,
-      fontWeight: 500,
-      background: COLORS[row.assetClass] + "18",
-      color: COLORS[row.assetClass]
-    }
-  }, row.assetClass)), /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "7px 12px",
-      textAlign: "right",
-      fontFamily: "monospace",
-      fontWeight: 600,
-      color: contribColor(row.contribution)
-    }
-  }, fmt(row.contribution)), /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "7px 12px",
-      textAlign: "right",
-      fontFamily: "monospace",
-      color: "#6B7280"
-    }
-  }, row.weight.toFixed(2), "%")))))), instrPages > 1 && /*#__PURE__*/React.createElement("div", {
+  }, label, " ", sortCol === col ? sortDir === "desc" ? "↓" : "↑" : "")))), /*#__PURE__*/React.createElement("tbody", null, pagedInstruments.map((row, i) => {
+    const activeVal = row.benchContrib !== null ? row.contribution - row.benchContrib : null;
+    return /*#__PURE__*/React.createElement("tr", {
+      key: i,
+      style: {
+        borderBottom: "1px solid #F3F4F6",
+        background: i % 2 === 0 ? "white" : "#FAFBFC"
+      }
+    }, /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        fontWeight: 500
+      }
+    }, row.instrument), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        color: "#6B7280"
+      }
+    }, row.category), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        padding: "2px 8px",
+        borderRadius: 4,
+        fontSize: 11,
+        fontWeight: 500,
+        background: COLORS[row.assetClass] + "18",
+        color: COLORS[row.assetClass]
+      }
+    }, row.assetClass)), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        color: "#6B7280"
+      }
+    }, row.weight.toFixed(2), "%"), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        fontWeight: 600,
+        color: contribColor(row.contribution)
+      }
+    }, fmt(row.contribution)), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        color: "#EF4444"
+      }
+    }, row.benchContrib !== null ? fmt(row.benchContrib) : "—"), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        fontWeight: 600,
+        color: contribColor(activeVal)
+      }
+    }, activeVal !== null ? fmt(activeVal) : "—"));
+  })))), instrPages > 1 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "center",
@@ -18491,16 +18622,7 @@ function AttributionDashboard() {
     key: w,
     onClick: () => setWindowTab(w),
     style: tabStyle(windowTab === w)
-  }, w)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: "#92400E",
-      background: "#FEF3C7",
-      padding: "3px 10px",
-      borderRadius: 10,
-      fontWeight: 600
-    }
-  }, "Data as of: ", latestDataDate), windowData && /*#__PURE__*/React.createElement("span", {
+  }, w)), asOfBadge, windowData && /*#__PURE__*/React.createElement("span", {
     style: {
       marginLeft: "auto",
       fontSize: 12,
@@ -18547,7 +18669,7 @@ function AttributionDashboard() {
       textTransform: "uppercase",
       letterSpacing: 1
     }
-  }, "Nifty 50 TR"), /*#__PURE__*/React.createElement("div", {
+  }, "Blended Benchmark"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 28,
       fontWeight: 700,
@@ -18555,7 +18677,7 @@ function AttributionDashboard() {
       fontFamily: "monospace",
       marginTop: 6
     }
-  }, windowData.eqBench !== null ? fmt(windowData.eqBench) : "—")), /*#__PURE__*/React.createElement("div", {
+  }, windowData.totalBlended !== null ? fmt(windowData.totalBlended) : "—")), /*#__PURE__*/React.createElement("div", {
     style: {
       ...card,
       textAlign: "center"
@@ -18572,11 +18694,11 @@ function AttributionDashboard() {
     style: {
       fontSize: 28,
       fontWeight: 700,
-      color: contribColor(windowData.eqBench !== null ? windowData.totalReturn - windowData.eqBench : 0),
+      color: contribColor(windowData.totalBlended !== null ? windowData.totalReturn - windowData.totalBlended : 0),
       fontFamily: "monospace",
       marginTop: 6
     }
-  }, windowData.eqBench !== null ? fmt(windowData.totalReturn - windowData.eqBench) : "—"))), /*#__PURE__*/React.createElement("div", {
+  }, windowData.totalBlended !== null ? fmt(windowData.totalReturn - windowData.totalBlended) : "—"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -18591,43 +18713,99 @@ function AttributionDashboard() {
       fontWeight: 600,
       color: "#374151"
     }
-  }, "Asset Class Attribution"), /*#__PURE__*/React.createElement(ResponsiveContainer, {
-    width: "100%",
-    height: 300
-  }, /*#__PURE__*/React.createElement(BarChart, {
-    data: AC_ORDER.filter(ac => windowData.byAC[ac] !== undefined).map(ac => ({
-      name: ac,
-      contribution: windowData.byAC[ac]
-    })),
-    layout: "vertical",
-    margin: {
-      left: 90
+  }, "Asset Class Attribution"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowY: "auto",
+      maxHeight: 300
     }
-  }, /*#__PURE__*/React.createElement(CartesianGrid, {
-    strokeDasharray: "3 3",
-    stroke: "#F3F4F6"
-  }), /*#__PURE__*/React.createElement(XAxis, {
-    type: "number",
-    tick: {
-      fontSize: 11
-    },
-    tickFormatter: v => fmt(v)
-  }), /*#__PURE__*/React.createElement(YAxis, {
-    type: "category",
-    dataKey: "name",
-    tick: {
+  }, /*#__PURE__*/React.createElement("table", {
+    style: {
+      width: "100%",
+      borderCollapse: "collapse",
       fontSize: 12
-    },
-    width: 80
-  }), /*#__PURE__*/React.createElement(Tooltip, {
-    formatter: v => fmt(v)
-  }), /*#__PURE__*/React.createElement(Bar, {
-    dataKey: "contribution",
-    radius: [0, 4, 4, 0]
-  }, AC_ORDER.filter(ac => windowData.byAC[ac] !== undefined).map(ac => /*#__PURE__*/React.createElement(Cell, {
-    key: ac,
-    fill: COLORS[ac]
-  })))))), /*#__PURE__*/React.createElement("div", {
+    }
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
+    style: {
+      background: "#F9FAFB",
+      borderBottom: "2px solid #E5E7EB"
+    }
+  }, /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "7px 12px",
+      textAlign: "left",
+      fontWeight: 600,
+      color: "#6B7280"
+    }
+  }, "Asset Class"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "7px 12px",
+      textAlign: "right",
+      fontWeight: 600,
+      color: "#3B82F6"
+    }
+  }, "Portfolio"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "7px 12px",
+      textAlign: "right",
+      fontWeight: 600,
+      color: "#EF4444"
+    }
+  }, "Benchmark"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "7px 12px",
+      textAlign: "right",
+      fontWeight: 600,
+      color: "#8B5CF6"
+    }
+  }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, AC_ORDER.filter(ac => windowData.byAC[ac] !== undefined).map((ac, i) => {
+    const port = windowData.byAC[ac];
+    const bench = windowData.benchByAC[ac];
+    const act = bench !== null && bench !== undefined ? port - bench : null;
+    return /*#__PURE__*/React.createElement("tr", {
+      key: ac,
+      style: {
+        borderBottom: "1px solid #F3F4F6",
+        background: i % 2 === 0 ? "white" : "#FAFBFC"
+      }
+    }, /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        fontWeight: 500
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "inline-block",
+        width: 10,
+        height: 10,
+        borderRadius: 2,
+        background: COLORS[ac],
+        marginRight: 6
+      }
+    }), ac), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        fontWeight: 600,
+        color: contribColor(port)
+      }
+    }, fmt(port)), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        color: "#EF4444"
+      }
+    }, bench !== null && bench !== undefined ? fmt(bench) : "—"), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "7px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        fontWeight: 600,
+        color: contribColor(act)
+      }
+    }, act !== null ? fmt(act) : "—"));
+  }))))), /*#__PURE__*/React.createElement("div", {
     style: card
   }, /*#__PURE__*/React.createElement("h3", {
     style: {
@@ -18664,27 +18842,60 @@ function AttributionDashboard() {
       padding: "7px 12px",
       textAlign: "right",
       fontWeight: 600,
-      color: "#6B7280"
+      color: "#3B82F6"
     }
-  }, "Contribution"))), /*#__PURE__*/React.createElement("tbody", null, Object.entries(windowData.byCat).sort((a, b) => b[1] - a[1]).map(([cat, val], i) => /*#__PURE__*/React.createElement("tr", {
-    key: cat,
+  }, "Portfolio"), /*#__PURE__*/React.createElement("th", {
     style: {
-      borderBottom: "1px solid #F3F4F6",
-      background: i % 2 === 0 ? "white" : "#FAFBFC"
-    }
-  }, /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "6px 12px"
-    }
-  }, cat), /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "6px 12px",
+      padding: "7px 12px",
       textAlign: "right",
-      fontFamily: "monospace",
       fontWeight: 600,
-      color: contribColor(val)
+      color: "#EF4444"
     }
-  }, fmt(val)))))))))))));
+  }, "Benchmark"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      padding: "7px 12px",
+      textAlign: "right",
+      fontWeight: 600,
+      color: "#8B5CF6"
+    }
+  }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, Object.entries(windowData.byCat).sort((a, b) => b[1] - a[1]).map(([cat, val], i) => {
+    const bench = windowData.benchByCat[cat];
+    const act = bench !== null && bench !== undefined ? val - bench : null;
+    return /*#__PURE__*/React.createElement("tr", {
+      key: cat,
+      style: {
+        borderBottom: "1px solid #F3F4F6",
+        background: i % 2 === 0 ? "white" : "#FAFBFC"
+      }
+    }, /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "6px 12px"
+      }
+    }, cat), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "6px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        fontWeight: 600,
+        color: contribColor(val)
+      }
+    }, fmt(val)), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "6px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        color: "#EF4444"
+      }
+    }, bench !== null && bench !== undefined ? fmt(bench) : "—"), /*#__PURE__*/React.createElement("td", {
+      style: {
+        padding: "6px 12px",
+        textAlign: "right",
+        fontFamily: "monospace",
+        fontWeight: 600,
+        color: contribColor(act)
+      }
+    }, act !== null ? fmt(act) : "—"));
+  }))))))))));
 }
 const root = createRoot(document.getElementById("root"));
 root.render(React.createElement(AttributionDashboard));
