@@ -542,14 +542,16 @@ function App() {
               e("tr", null,
                 e("th", { style: { textAlign: "left" } }, "Strategy"),
                 timeWindowData.windows.map(function(tw) {
+                  var cols = [
+                    e("th", { key: tw + "-port" }, tw + " Port"),
+                    e("th", { key: tw + "-bm" }, tw + " BM")
+                  ];
                   if (showActive) {
-                    return [
-                      e("th", { key: tw + "-port" }, tw + " Port"),
-                      e("th", { key: tw + "-bm" }, tw + " BM"),
-                      e("th", { key: tw + "-act", style: { borderRight: "2px solid #e2e8f0" } }, tw + " Active")
-                    ];
+                    cols.push(e("th", { key: tw + "-act", style: { borderRight: "2px solid #e2e8f0" } }, tw + " Active"));
+                  } else {
+                    cols[cols.length - 1] = e("th", { key: tw + "-bm", style: { borderRight: "2px solid #e2e8f0" } }, tw + " BM");
                   }
-                  return e("th", { key: tw }, tw);
+                  return cols;
                 })
               )
             ),
@@ -560,17 +562,20 @@ function App() {
                   timeWindowData.windows.map(function(tw) {
                     var data = (timeWindowData.results[tw] || []).find(function(r) { return r.strategy === strat.name; });
                     if (!data) {
-                      if (showActive) return [e("td", { key: tw + "-p" }, "—"), e("td", { key: tw + "-b" }, "—"), e("td", { key: tw + "-a" }, "—")];
-                      return e("td", { key: tw }, "—");
+                      var emptyCols = [e("td", { key: tw + "-p" }, "—"), e("td", { key: tw + "-b" }, "—")];
+                      if (showActive) emptyCols.push(e("td", { key: tw + "-a" }, "—"));
+                      return emptyCols;
                     }
+                    var cols = [
+                      e("td", { key: tw + "-p", className: cellClass(data.portfolio) }, fmt(data.portfolio)),
+                      e("td", { key: tw + "-b", className: cellClass(data.benchmark) }, fmt(data.benchmark))
+                    ];
                     if (showActive) {
-                      return [
-                        e("td", { key: tw + "-p", className: cellClass(data.portfolio) }, fmt(data.portfolio)),
-                        e("td", { key: tw + "-b" }, fmt(data.benchmark)),
-                        e("td", { key: tw + "-a", className: cellClass(data.active, true), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.active))
-                      ];
+                      cols.push(e("td", { key: tw + "-a", className: cellClass(data.active, true), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.active)));
+                    } else {
+                      cols[cols.length - 1] = e("td", { key: tw + "-b", className: cellClass(data.benchmark), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.benchmark));
                     }
-                    return e("td", { key: tw, className: cellClass(data.portfolio) }, fmt(data.portfolio));
+                    return cols;
                   })
                 );
               })
@@ -586,14 +591,16 @@ function App() {
               e("tr", null,
                 e("th", { style: { textAlign: "left" } }, "Month"),
                 STRATEGIES.map(function(strat) {
+                  var cols = [
+                    e("th", { key: strat.name + "-port" }, strat.name + " Port"),
+                    e("th", { key: strat.name + "-bm" }, strat.name + " BM")
+                  ];
                   if (showActive) {
-                    return [
-                      e("th", { key: strat.name + "-port" }, strat.name + " Port"),
-                      e("th", { key: strat.name + "-bm" }, strat.name + " BM"),
-                      e("th", { key: strat.name + "-act", style: { borderRight: "2px solid #e2e8f0" } }, strat.name + " Active")
-                    ];
+                    cols.push(e("th", { key: strat.name + "-act", style: { borderRight: "2px solid #e2e8f0" } }, strat.name + " Active"));
+                  } else {
+                    cols[cols.length - 1] = e("th", { key: strat.name + "-bm", style: { borderRight: "2px solid #e2e8f0" } }, strat.name + " BM");
                   }
-                  return e("th", { key: strat.name }, strat.name);
+                  return cols;
                 })
               )
             ),
@@ -604,17 +611,20 @@ function App() {
                   STRATEGIES.map(function(strat) {
                     var data = entry.strategies[strat.name];
                     if (!data) {
-                      if (showActive) return [e("td", { key: strat.name + "-p" }, "—"), e("td", { key: strat.name + "-b" }, "—"), e("td", { key: strat.name + "-a" }, "—")];
-                      return e("td", { key: strat.name }, "—");
+                      var emptyCols = [e("td", { key: strat.name + "-p" }, "—"), e("td", { key: strat.name + "-b" }, "—")];
+                      if (showActive) emptyCols.push(e("td", { key: strat.name + "-a" }, "—"));
+                      return emptyCols;
                     }
+                    var cols = [
+                      e("td", { key: strat.name + "-p", className: cellClass(data.portfolio) }, fmt(data.portfolio)),
+                      e("td", { key: strat.name + "-b", className: cellClass(data.benchmark) }, fmt(data.benchmark))
+                    ];
                     if (showActive) {
-                      return [
-                        e("td", { key: strat.name + "-p", className: cellClass(data.portfolio) }, fmt(data.portfolio)),
-                        e("td", { key: strat.name + "-b" }, fmt(data.benchmark)),
-                        e("td", { key: strat.name + "-a", className: cellClass(data.active, true), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.active))
-                      ];
+                      cols.push(e("td", { key: strat.name + "-a", className: cellClass(data.active, true), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.active)));
+                    } else {
+                      cols[cols.length - 1] = e("td", { key: strat.name + "-b", className: cellClass(data.benchmark), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.benchmark));
                     }
-                    return e("td", { key: strat.name, className: cellClass(data.portfolio) }, fmt(data.portfolio));
+                    return cols;
                   })
                 );
               })
