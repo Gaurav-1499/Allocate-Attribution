@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- build: 1773395553 -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ionic Allocate — Attribution Analysis</title>
@@ -899,17 +898,17 @@ function AttributionDashboard() {
     var allStrats = strategies;
 
     // Get date boundaries
-    var allEnds = RAW_DATA.periods.map(function(p) { return p.endDate; }).sort();
+    var allEnds = periods.map(function(p) { return p.endDate; }).sort();
     var latestEnd = effectiveEndDate || (allEnds.length > 0 ? allEnds[allEnds.length - 1] : null);
     if (!latestEnd) return null;
 
-    var allStarts = RAW_DATA.periods.map(function(p) { return p.startDate; }).sort();
+    var allStarts = periods.map(function(p) { return p.startDate; }).sort();
     var earliestStart = allStarts.length > 0 ? allStarts[0] : null;
 
     // Get all months
     var allMonths = [];
     var monthSet = {};
-    RAW_DATA.periods.forEach(function(p) {
+    periods.forEach(function(p) {
       if (!monthSet[p.endDate]) {
         monthSet[p.endDate] = true;
         allMonths.push(p.endDate);
@@ -966,18 +965,31 @@ function AttributionDashboard() {
       windowResults[tw] = stratResults;
     });
 
-    // Month-on-month returns for each strategy
+    // Month-on-month returns for each strategy — USE NAV-to-NAV returns, NOT contribution sums
     var momResults = [];
     allMonths.forEach(function(endDate) {
       var entry = { month: monthLabel(endDate), endDate: endDate, strategies: {} };
       allStrats.forEach(function(strat) {
         // Find the period for this strat+month
-        var period = RAW_DATA.periods.find(function(p) {
+        var period = periods.find(function(p) {
           return p.strategy === strat && p.endDate === endDate;
         });
         if (!period) return;
 
-        var totalContrib = period.rows.reduce(function(s, r) { return s + r.contribution; }, 0);
+        // NAV-based portfolio return for the month
+        var navSeries = getNAVSeries(strat);
+        var portfolioReturn = null;
+        if (navSeries.length > 0) {
+          // Find NAV at period start and end
+          var startNAV = null, endNAV = null;
+          for (var ni = navSeries.length - 1; ni >= 0; ni--) {
+            if (navSeries[ni].date <= period.startDate && startNAV === null) startNAV = navSeries[ni].nav;
+            if (navSeries[ni].date <= period.endDate && endNAV === null) endNAV = navSeries[ni].nav;
+          }
+          if (startNAV && endNAV && startNAV > 0) {
+            portfolioReturn = (endNAV / startNAV - 1) * 100;
+          }
+        }
 
         // Benchmark return for that month
         var eqW = getEqWeight(strat);
@@ -986,9 +998,9 @@ function AttributionDashboard() {
         var bmRet = blendedBench(eqBench, arbBench, [strat]);
 
         entry.strategies[strat] = {
-          portfolio: totalContrib,
+          portfolio: portfolioReturn,
           benchmark: bmRet,
-          active: bmRet !== null ? totalContrib - bmRet : null,
+          active: bmRet !== null && portfolioReturn !== null ? portfolioReturn - bmRet : null,
           shortName: strat.replace("IONIC ALLOCATE PORTFOLIO ", "")
         };
       });
