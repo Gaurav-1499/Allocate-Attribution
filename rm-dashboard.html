@@ -264,8 +264,9 @@ function App() {
 
   // Compute time window returns
   var timeWindowData = useMemo(function() {
-    var windows = ["1M", "3M", "6M", "YTD", "1Y", "SI"];
+    var windows = ["1M", "3M", "6M", "CYTD", "FYTD", "1Y", "SI"];
     var results = {};
+    var has1Y = false; // Track if any strategy has 1 full year
 
     windows.forEach(function(tw) {
       var stratResults = [];
@@ -278,13 +279,39 @@ function App() {
         if (filteredNav.length < 2) return;
 
         var endDate = filteredNav[filteredNav.length - 1][0];
+        var inceptionDate = filteredNav[0][0];
         var startDate;
 
         if (tw === "SI") {
-          startDate = filteredNav[0][0];
-        } else if (tw === "YTD") {
+          startDate = inceptionDate;
+        } else if (tw === "CYTD") {
+          // Calendar Year To Date: from Dec 31 of previous year
           var yr = parseInt(endDate.split("-")[0]);
           startDate = (yr - 1) + "-12-31";
+        } else if (tw === "FYTD") {
+          // Financial Year To Date (Apr-Mar): from Mar 31 of current/previous FY
+          var yr = parseInt(endDate.split("-")[0]);
+          var mo = parseInt(endDate.split("-")[1]);
+          // If we're in Jan-Mar, FY started previous year's Mar 31
+          if (mo <= 3) {
+            startDate = (yr - 1) + "-03-31";
+          } else {
+            startDate = yr + "-03-31";
+          }
+        } else if (tw === "1Y") {
+          // Only compute if strategy has at least 1 full year of data
+          var endParts = endDate.split("-");
+          var oneYearBack = (parseInt(endParts[0]) - 1) + "-" + endParts[1] + "-" + endParts[2];
+          if (inceptionDate > oneYearBack) return; // Skip — not enough history
+          has1Y = true;
+          // Month-end to month-end
+          var eYear = parseInt(endParts[0]);
+          var eMonth = parseInt(endParts[1]);
+          var targetMonth = eMonth - 12;
+          var targetYear = eYear;
+          while (targetMonth <= 0) { targetMonth += 12; targetYear--; }
+          var lastDay = new Date(targetYear, targetMonth, 0).getDate();
+          startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(lastDay).padStart(2, "0");
         } else {
           var months = parseInt(tw);
           var endParts = endDate.split("-");
@@ -315,7 +342,13 @@ function App() {
       results[tw] = stratResults;
     });
 
-    return { windows: windows, results: results };
+    // Filter out 1Y if no strategy has enough data
+    var visibleWindows = windows.filter(function(tw) {
+      if (tw === "1Y") return has1Y;
+      return true;
+    });
+
+    return { windows: visibleWindows, results: results };
   }, [analysisDate]);
 
   // Compute monthly returns
@@ -360,9 +393,9 @@ function App() {
     return results;
   }, [analysisDate]);
 
-  // Compute risk metrics
+  // Compute risk metrics — uses same window logic as returns
   var riskData = useMemo(function() {
-    var windows = ["1M", "3M", "6M", "YTD", "1Y", "SI"];
+    var windows = timeWindowData.windows; // Reuse same visible windows (excludes 1Y if not enough data)
     var results = {};
 
     windows.forEach(function(tw) {
@@ -375,13 +408,33 @@ function App() {
         if (filteredNav.length < 2) return;
 
         var endDate = filteredNav[filteredNav.length - 1][0];
+        var inceptionDate = filteredNav[0][0];
         var startDate;
 
         if (tw === "SI") {
-          startDate = filteredNav[0][0];
-        } else if (tw === "YTD") {
+          startDate = inceptionDate;
+        } else if (tw === "CYTD") {
           var yr = parseInt(endDate.split("-")[0]);
           startDate = (yr - 1) + "-12-31";
+        } else if (tw === "FYTD") {
+          var yr = parseInt(endDate.split("-")[0]);
+          var mo = parseInt(endDate.split("-")[1]);
+          if (mo <= 3) {
+            startDate = (yr - 1) + "-03-31";
+          } else {
+            startDate = yr + "-03-31";
+          }
+        } else if (tw === "1Y") {
+          var endParts = endDate.split("-");
+          var oneYearBack = (parseInt(endParts[0]) - 1) + "-" + endParts[1] + "-" + endParts[2];
+          if (inceptionDate > oneYearBack) return;
+          var eYear = parseInt(endParts[0]);
+          var eMonth = parseInt(endParts[1]);
+          var targetMonth = eMonth - 12;
+          var targetYear = eYear;
+          while (targetMonth <= 0) { targetMonth += 12; targetYear--; }
+          var lastDay = new Date(targetYear, targetMonth, 0).getDate();
+          startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(lastDay).padStart(2, "0");
         } else {
           var months = parseInt(tw);
           var endParts = endDate.split("-");
@@ -411,7 +464,7 @@ function App() {
     });
 
     return { windows: windows, results: results };
-  }, [analysisDate]);
+  }, [analysisDate, timeWindowData]);
 
   // Format helpers
   function fmt(v, decimals) {
@@ -434,12 +487,20 @@ function App() {
     return months[parseInt(parts[1])-1] + " " + parts[0].slice(2);
   }
 
-  // Cell color class
-  function cellClass(val, isActive) {
-    if (val === null || val === undefined || isNaN(val)) return "cell-neutral";
-    if (isActive) {
-      return val > 0.005 ? "cell-green" : val < -0.005 ? "cell-red" : "cell-neutral";
+  // Cell color class — color coding is ALWAYS based on active return (vs benchmark)
+  // Green = outperformed BM, Red = underperformed BM
+  function cellClass(activeReturn, isActiveCol) {
+    if (activeReturn === null || activeReturn === undefined || isNaN(activeReturn)) return "cell-neutral";
+    if (isActiveCol) {
+      // Active column itself: full cell color
+      return activeReturn > 0.005 ? "cell-green" : activeReturn < -0.005 ? "cell-red" : "cell-neutral";
     }
+    // Portfolio/BM cells: text color based on outperformance
+    return activeReturn > 0.005 ? "cell-green" : activeReturn < -0.005 ? "cell-red" : "cell-neutral";
+  }
+  // Simple positive/negative text color (no BM context, e.g. BM column)
+  function valColorClass(val) {
+    if (val === null || val === undefined || isNaN(val)) return "";
     return val > 0.005 ? "cell-positive" : val < -0.005 ? "cell-negative" : "";
   }
 
@@ -567,13 +628,13 @@ function App() {
                       return emptyCols;
                     }
                     var cols = [
-                      e("td", { key: tw + "-p", className: cellClass(data.portfolio) }, fmt(data.portfolio)),
-                      e("td", { key: tw + "-b", className: cellClass(data.benchmark) }, fmt(data.benchmark))
+                      e("td", { key: tw + "-p", className: cellClass(data.active) }, fmt(data.portfolio)),
+                      e("td", { key: tw + "-b", className: valColorClass(data.benchmark) }, fmt(data.benchmark))
                     ];
                     if (showActive) {
                       cols.push(e("td", { key: tw + "-a", className: cellClass(data.active, true), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.active)));
                     } else {
-                      cols[cols.length - 1] = e("td", { key: tw + "-b", className: cellClass(data.benchmark), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.benchmark));
+                      cols[cols.length - 1] = e("td", { key: tw + "-b", className: valColorClass(data.benchmark), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.benchmark));
                     }
                     return cols;
                   })
@@ -616,13 +677,13 @@ function App() {
                       return emptyCols;
                     }
                     var cols = [
-                      e("td", { key: strat.name + "-p", className: cellClass(data.portfolio) }, fmt(data.portfolio)),
-                      e("td", { key: strat.name + "-b", className: cellClass(data.benchmark) }, fmt(data.benchmark))
+                      e("td", { key: strat.name + "-p", className: cellClass(data.active) }, fmt(data.portfolio)),
+                      e("td", { key: strat.name + "-b", className: valColorClass(data.benchmark) }, fmt(data.benchmark))
                     ];
                     if (showActive) {
                       cols.push(e("td", { key: strat.name + "-a", className: cellClass(data.active, true), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.active)));
                     } else {
-                      cols[cols.length - 1] = e("td", { key: strat.name + "-b", className: cellClass(data.benchmark), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.benchmark));
+                      cols[cols.length - 1] = e("td", { key: strat.name + "-b", className: valColorClass(data.benchmark), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.benchmark));
                     }
                     return cols;
                   })
