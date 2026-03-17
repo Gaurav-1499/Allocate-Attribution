@@ -76,6 +76,7 @@
     /* Footer */
     .footer { text-align: center; padding: 16px; font-size: 11px; color: #94a3b8; }
     .footer a { color: #64748b; text-decoration: none; }
+    .disclaimer { max-width: 1200px; margin: 24px auto 0; padding: 16px 20px; font-size: 10px; line-height: 1.5; color: #94a3b8; border-top: 1px solid #e2e8f0; text-align: justify; }
 
     /* Responsive */
     @media (max-width: 768px) {
@@ -605,12 +606,12 @@ function App() {
                 timeWindowData.windows.map(function(tw) {
                   var cols = [
                     e("th", { key: tw + "-port" }, tw + " Port"),
-                    e("th", { key: tw + "-bm" }, tw + " BM")
+                    e("th", { key: tw + "-bm" }, tw + " FRI")
                   ];
                   if (showActive) {
                     cols.push(e("th", { key: tw + "-act", style: { borderRight: "2px solid #e2e8f0" } }, tw + " Active"));
                   } else {
-                    cols[cols.length - 1] = e("th", { key: tw + "-bm", style: { borderRight: "2px solid #e2e8f0" } }, tw + " BM");
+                    cols[cols.length - 1] = e("th", { key: tw + "-bm", style: { borderRight: "2px solid #e2e8f0" } }, tw + " FRI");
                   }
                   return cols;
                 })
@@ -654,12 +655,12 @@ function App() {
                 STRATEGIES.map(function(strat) {
                   var cols = [
                     e("th", { key: strat.name + "-port" }, strat.name + " Port"),
-                    e("th", { key: strat.name + "-bm" }, strat.name + " BM")
+                    e("th", { key: strat.name + "-bm" }, strat.name + " FRI")
                   ];
                   if (showActive) {
                     cols.push(e("th", { key: strat.name + "-act", style: { borderRight: "2px solid #e2e8f0" } }, strat.name + " Active"));
                   } else {
-                    cols[cols.length - 1] = e("th", { key: strat.name + "-bm", style: { borderRight: "2px solid #e2e8f0" } }, strat.name + " BM");
+                    cols[cols.length - 1] = e("th", { key: strat.name + "-bm", style: { borderRight: "2px solid #e2e8f0" } }, strat.name + " FRI");
                   }
                   return cols;
                 })
@@ -736,10 +737,10 @@ function App() {
             e("tbody", null,
               [
                 { label: "Cumulative Return", key: "cumReturn", fmt: "pct", colorActive: false },
-                { label: "Benchmark Return", key: "bmReturn", fmt: "pct", colorActive: false },
+                { label: "Fee Reference Index Return", key: "bmReturn", fmt: "pct", colorActive: false },
                 { label: "Alpha (Ann.)", key: "alpha", fmt: "pct", colorActive: true },
                 { label: "Annualised Return", key: "annReturn", fmt: "pct", colorActive: false },
-                { label: "Annualised BM Return", key: "annBmReturn", fmt: "pct", colorActive: false },
+                { label: "Annualised FRI Return", key: "annBmReturn", fmt: "pct", colorActive: false },
                 { label: "Std Deviation (Ann.)", key: "stdDev", fmt: "pct", colorActive: false },
                 { label: "Downside Deviation", key: "downsideDev", fmt: "pct", colorActive: false },
                 { label: "Beta", key: "beta", fmt: "num", colorActive: false },
@@ -772,9 +773,15 @@ function App() {
 
         // Inception dates
         e("div", { style: { fontSize: 11, color: "#94a3b8", padding: "8px 4px" } },
-          "Benchmark: Blended composite — Aggressive (80% Nifty 50 TRI + 20% Nifty 50 Arb), Equity (100% Nifty 50 TRI), Moderate (50% Nifty 50 TRI + 50% Nifty 50 Arb). Risk-free rate: 0%."
+          "Fee Reference Index: Blended composite — Aggressive (80% Nifty 50 TRI + 20% Nifty 50 Arb), Equity (100% Nifty 50 TRI), Moderate (50% Nifty 50 TRI + 50% Nifty 50 Arb). Risk-free rate: 0%."
         )
       )
+    ),
+
+    // Disclaimer
+    e("div", { className: "disclaimer" },
+      e("strong", null, "Disclaimer: "),
+      "Angel One Investment Managers & Advisors Private Limited carrying its business activities under the brand name \u2018Ionic Asset by Angel One\u2019 (hereinafter referred to as \u201CIonic Asset\u201D) is regulated by the Securities and Exchange Board of India (\u201CSEBI\u201D) as a provider of Portfolio Management Services bearing registration no. INP000009117 and as an investment advisor providing investment advisory services bearing registration no. INA000019804. In addition, Ionic Asset is also involved in managing alternative investment funds and has also obtained a registered fund management entity (non-retail) license (bearing no. FDM2025FNR0810). This communication is confidential and privileged and is directed to and for the use of the addressee only. The recipient, if not the addressee, should not use this material if erroneously received, and access and use of this material in any manner by anyone other than the addressee is unauthorized. If you are not the intended recipient, please notify the sender and immediately destroy all copies of this message and any attachments and delete it from your computer system, permanently. The performance related information provided herein is not verified by SEBI nor has SEBI certified the accuracy or adequacy of the same. Returns & Portfolio of client wise portfolio may vary vis\u2011\u00e0\u2011vis as compared to Investment Approach aggregate level returns due to various factors viz. timing of investment / additional investment, timing of withdrawals, specific client mandates, variation of expenses charged & dividend income. The material, names and branding of the investment style do not provide any impression or a claim that these products/strategies achieve the respective objectives. Ionic Asset and/or its affiliates, associates, employees, the authors of this material (including their relatives) may have financial interest by way of investments in the companies covered in this material. The information provided in the market commentary section herein is for informational purposes only and does not constitute financial advice. The recipient of this material is urged to read the Disclosure Document available on our website (https://angeloneim.in/) and any other documents or disclosures provided to them by Ionic Asset, as applicable, and is advised to consult their own legal and tax consultants/advisors before making any investment in the Investment Approaches. The sector(s)/stock(s)/issuer(s) / fund(s) as may be mentioned in this presentation do not constitute any research report/recommendation of the same and the PMS Investment Approach may or may not have any future position in these sector(s)/stock(s)/issuer(s). The framework/ strategy mentioned herein are currently followed by the investment approach and the same may change in future depending on market conditions and other factors. Past performance may or may not sustain in future and should not be used as a basis for comparison with other investments. Investing in securities involves certain risks and considerations associated generally with making investments in securities. The value of the portfolio investments may be affected generally by factors affecting financial markets, such as price and volume, volatility in interest rates, currency exchange rates, changes in regulatory and administrative policies of the Government or any other appropriate authority (including tax laws) or other political and economic developments. Consequently, there can be no assurance that the objective of the Portfolio would be achieved. All recipients of this material must before dealing and/or transacting in any of the products referred to in this material must make their own investigation, seek appropriate professional advice and carefully read the Disclosure Document and any other documents or disclosures provided to them by Ionic Asset, as applicable. There is no assurance or guarantee that the objectives of the investment strategy/approach will be achieved. This material may include \u201Cforward looking statements\u201D. We have included statements/opinions/recommendations in this material, which contain words, or phrases such as \u201Cwill\u201D, \u201Cexpect\u201D, \u201Cshould\u201D, \u201Cbelieve\u201D and also PE ratios, EPS and Earnings Growth for forthcoming years and similar expressions or variations of such expressions that are \u201Cforward looking statements\u201D. All forward-looking statements involve risk and uncertainty. Any forward-looking statements contained in this document speak only as of the date on which they are made. Further, past performance is not indicative of future results. 18% GST applies on fees and expenses. Ionic Asset offers the option of direct onboarding to clients under the Discretionary and Non-Discretionary Services. Please write to us at clientsupport@ionic.in for more details. Direct Onboarding: We do offer direct onboarding of clients, please write to us at clientsupport@ionic.in for more details."
     ),
 
     // Footer
