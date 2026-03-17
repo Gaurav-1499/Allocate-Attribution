@@ -185,10 +185,21 @@ function computeRiskMetrics(fundDaily, bmDaily, navStart, navEnd, bmReturn) {
   var bVar = aB.reduce(function(s, r) { return s + (r - bMean) * (r - bMean); }, 0) / (n - 1);
   var beta = bVar > 0 ? cov / bVar : 0;
 
-  // Ratios (RF=0)
+  // FRI Std Dev
+  var bStd = Math.sqrt(aB.reduce(function(s, r) { return s + (r - bMean) * (r - bMean); }, 0) / (n - 1)) * Math.sqrt(252) * 100;
+
+  // FRI Downside Dev
+  var bDsSum = aB.reduce(function(s, r) { return s + (r < 0 ? r * r : 0); }, 0) / n;
+  var bDsDev = Math.sqrt(bDsSum) * Math.sqrt(252) * 100;
+
+  // Portfolio Ratios (RF=0)
   var sharpe = fStd > 0 ? fAnn / fStd : 0;
   var sortino = dsDev > 0 ? fAnn / dsDev : 0;
   var treynor = beta !== 0 ? fAnn / beta : 0;
+
+  // FRI Ratios (RF=0)
+  var bmSharpe = bStd > 0 ? bAnn / bStd : 0;
+  var bmSortino = bDsDev > 0 ? bAnn / bDsDev : 0;
 
   return {
     cumReturn: fCum * 100,
@@ -197,17 +208,15 @@ function computeRiskMetrics(fundDaily, bmDaily, navStart, navEnd, bmReturn) {
     annBmReturn: bAnn,
     alpha: fAnn - bAnn,
     stdDev: fStd,
+    bmStdDev: bStd,
     downsideDev: dsDev,
+    bmDownsideDev: bDsDev,
     beta: beta,
     sharpe: sharpe,
+    bmSharpe: bmSharpe,
     sortino: sortino,
-    treynor: treynor,
-    trackingError: Math.sqrt(aF.reduce(function(s, r, i) { var d = r - aB[i]; return s + (d - (aF.reduce(function(ss,rr,ii){return ss+rr-aB[ii];},0)/n)) * (d - (aF.reduce(function(ss,rr,ii){return ss+rr-aB[ii];},0)/n)); }, 0) / (n - 1)) * Math.sqrt(252) * 100,
-    maxDrawdown: function() {
-      var peak = 1, maxDD = 0, cum = 1;
-      aF.forEach(function(r) { cum *= (1 + r); if (cum > peak) peak = cum; var dd = (peak - cum) / peak; if (dd > maxDD) maxDD = dd; });
-      return maxDD * 100;
-    }()
+    bmSortino: bmSortino,
+    treynor: treynor
   };
 }
 
@@ -743,27 +752,30 @@ function App() {
               e("tr", null,
                 e("th", { style: { textAlign: "left" } }, "Metric"),
                 STRATEGIES.map(function(strat) {
-                  return e("th", { key: strat.name }, strat.fullName);
+                  if (!showActive) {
+                    return e("th", { key: strat.name, style: { borderRight: "2px solid #e2e8f0" } }, strat.name);
+                  }
+                  return [
+                    e("th", { key: strat.name + "-port" }, strat.name + " Port"),
+                    e("th", { key: strat.name + "-fri", style: { borderRight: "2px solid #e2e8f0" } }, strat.name + " FRI")
+                  ];
                 })
               )
             ),
             e("tbody", null,
               [
-                { label: "Cumulative Return", key: "cumReturn", fmt: "pct", colorActive: false, friOnly: false },
-                { label: "Fee Reference Index Return", key: "bmReturn", fmt: "pct", colorActive: false, friOnly: true },
-                { label: "Alpha (Ann.)", key: "alpha", fmt: "pct", colorActive: true, friOnly: true },
-                { label: "Annualised Return", key: "annReturn", fmt: "pct", colorActive: false, friOnly: false },
-                { label: "Annualised FRI Return", key: "annBmReturn", fmt: "pct", colorActive: false, friOnly: true },
-                { label: "Std Deviation (Ann.)", key: "stdDev", fmt: "pct", colorActive: false, friOnly: false },
-                { label: "Downside Deviation", key: "downsideDev", fmt: "pct", colorActive: false, friOnly: false },
-                { label: "Beta", key: "beta", fmt: "num", colorActive: false, friOnly: true },
-                { label: "Sharpe Ratio", key: "sharpe", fmt: "num", colorActive: false, friOnly: false },
-                { label: "Sortino Ratio", key: "sortino", fmt: "num", colorActive: false, friOnly: false },
-                { label: "Treynor Ratio", key: "treynor", fmt: "num", colorActive: false, friOnly: false },
-                { label: "Max Drawdown", key: "maxDrawdown", fmt: "pct", colorActive: false, friOnly: false },
-                { label: "Tracking Error", key: "trackingError", fmt: "pct", colorActive: false, friOnly: true }
+                { label: "Cumulative Return", key: "cumReturn", bmKey: "bmReturn", fmt: "pct", isAlpha: false },
+                { label: "Annualised Return", key: "annReturn", bmKey: "annBmReturn", fmt: "pct", isAlpha: false },
+                { label: "Alpha (Ann.)", key: "alpha", bmKey: null, fmt: "pct", isAlpha: true },
+                { label: "Std Deviation (Ann.)", key: "stdDev", bmKey: "bmStdDev", fmt: "pct", isAlpha: false },
+                { label: "Downside Deviation", key: "downsideDev", bmKey: "bmDownsideDev", fmt: "pct", isAlpha: false },
+                { label: "Beta", key: "beta", bmKey: null, fmt: "num", isAlpha: false },
+                { label: "Sharpe Ratio", key: "sharpe", bmKey: "bmSharpe", fmt: "num", isAlpha: false },
+                { label: "Sortino Ratio", key: "sortino", bmKey: "bmSortino", fmt: "num", isAlpha: false },
+                { label: "Treynor Ratio", key: "treynor", bmKey: null, fmt: "num", isAlpha: false }
               ].filter(function(metric) {
-                if (metric.friOnly && !showActive) return false;
+                // Alpha and Beta only visible when FRI comparison is on
+                if ((metric.key === "alpha" || metric.key === "beta") && !showActive) return false;
                 return true;
               }).map(function(metric) {
                 var riskResults = riskData.results[riskWindow] || [];
@@ -771,15 +783,29 @@ function App() {
                   e("td", null, metric.label),
                   STRATEGIES.map(function(strat) {
                     var data = riskResults.find(function(r) { return r.strategy === strat.name; });
-                    if (!data) return e("td", { key: strat.name }, "—");
-                    var val = data[metric.key];
-                    var cls = "";
-                    if (metric.colorActive && val !== null && val !== undefined) {
-                      cls = val > 0.005 ? "cell-green" : val < -0.005 ? "cell-red" : "cell-neutral";
+                    if (!data) {
+                      if (!showActive) return e("td", { key: strat.name, style: { borderRight: "2px solid #e2e8f0" } }, "—");
+                      return [e("td", { key: strat.name + "-p" }, "—"), e("td", { key: strat.name + "-f", style: { borderRight: "2px solid #e2e8f0" } }, "—")];
                     }
-                    return e("td", { key: strat.name, className: cls },
-                      metric.fmt === "pct" ? fmt(val) : fmtNum(val)
-                    );
+                    var val = data[metric.key];
+                    var fmtFn = metric.fmt === "pct" ? fmt : fmtNum;
+                    if (!showActive) {
+                      var cls = "";
+                      if (metric.isAlpha && val !== null && val !== undefined) {
+                        cls = val > 0.005 ? "cell-green" : val < -0.005 ? "cell-red" : "cell-neutral";
+                      }
+                      return e("td", { key: strat.name, className: cls, style: { borderRight: "2px solid #e2e8f0" } }, fmtFn(val));
+                    }
+                    // Show Portfolio + FRI columns
+                    var portCls = "";
+                    if (metric.isAlpha && val !== null && val !== undefined) {
+                      portCls = val > 0.005 ? "cell-green" : val < -0.005 ? "cell-red" : "cell-neutral";
+                    }
+                    var bmVal = metric.bmKey ? data[metric.bmKey] : null;
+                    return [
+                      e("td", { key: strat.name + "-p", className: portCls }, fmtFn(val)),
+                      e("td", { key: strat.name + "-f", style: { borderRight: "2px solid #e2e8f0" } }, bmVal !== null && bmVal !== undefined ? fmtFn(bmVal) : "—")
+                    ];
                   })
                 );
               })
