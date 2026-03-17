@@ -701,6 +701,14 @@ function App() {
             if (!nav) return null;
             return strat.name + " inception: " + fmtDate(nav.d[0][0]);
           }).filter(Boolean).join("  |  ")
+        ),
+        // FRI Legend
+        e("div", { style: { fontSize: 11, color: "#94a3b8", padding: "4px 4px 0" } },
+          e("strong", { style: { color: "#64748b" } }, "FRI = Fee Reference Index"),
+          " (Blended composite benchmark used for fee calculation purposes)"
+        ),
+        e("div", { style: { fontSize: 11, color: "#94a3b8", padding: "2px 4px" } },
+          "Aggressive: 80% Nifty 50 TRI + 20% Nifty 50 Arb  |  Equity: 100% Nifty 50 TRI  |  Moderate: 50% Nifty 50 TRI + 50% Nifty 50 Arb"
         )
       ),
 
@@ -715,6 +723,11 @@ function App() {
                 return e("button", { key: tw, className: "toggle-btn" + (riskWindow === tw ? " active" : ""), onClick: function() { setRiskWindow(tw); } }, tw);
               })
             )
+          ),
+          e("label", { className: "radio-toggle" },
+            e("input", { type: "checkbox", checked: showActive, onChange: function() { setShowActive(!showActive); } }),
+            e("span", { className: "radio-dot" }),
+            e("span", { className: "radio-label" }, "Show FRI Comparison")
           ),
           e("div", { style: { flex: 1 } }),
           e("div", { className: "export-group" },
@@ -736,20 +749,23 @@ function App() {
             ),
             e("tbody", null,
               [
-                { label: "Cumulative Return", key: "cumReturn", fmt: "pct", colorActive: false },
-                { label: "Fee Reference Index Return", key: "bmReturn", fmt: "pct", colorActive: false },
-                { label: "Alpha (Ann.)", key: "alpha", fmt: "pct", colorActive: true },
-                { label: "Annualised Return", key: "annReturn", fmt: "pct", colorActive: false },
-                { label: "Annualised FRI Return", key: "annBmReturn", fmt: "pct", colorActive: false },
-                { label: "Std Deviation (Ann.)", key: "stdDev", fmt: "pct", colorActive: false },
-                { label: "Downside Deviation", key: "downsideDev", fmt: "pct", colorActive: false },
-                { label: "Beta", key: "beta", fmt: "num", colorActive: false },
-                { label: "Sharpe Ratio", key: "sharpe", fmt: "num", colorActive: false },
-                { label: "Sortino Ratio", key: "sortino", fmt: "num", colorActive: false },
-                { label: "Treynor Ratio", key: "treynor", fmt: "num", colorActive: false },
-                { label: "Max Drawdown", key: "maxDrawdown", fmt: "pct", colorActive: false },
-                { label: "Tracking Error", key: "trackingError", fmt: "pct", colorActive: false }
-              ].map(function(metric) {
+                { label: "Cumulative Return", key: "cumReturn", fmt: "pct", colorActive: false, friOnly: false },
+                { label: "Fee Reference Index Return", key: "bmReturn", fmt: "pct", colorActive: false, friOnly: true },
+                { label: "Alpha (Ann.)", key: "alpha", fmt: "pct", colorActive: true, friOnly: true },
+                { label: "Annualised Return", key: "annReturn", fmt: "pct", colorActive: false, friOnly: false },
+                { label: "Annualised FRI Return", key: "annBmReturn", fmt: "pct", colorActive: false, friOnly: true },
+                { label: "Std Deviation (Ann.)", key: "stdDev", fmt: "pct", colorActive: false, friOnly: false },
+                { label: "Downside Deviation", key: "downsideDev", fmt: "pct", colorActive: false, friOnly: false },
+                { label: "Beta", key: "beta", fmt: "num", colorActive: false, friOnly: true },
+                { label: "Sharpe Ratio", key: "sharpe", fmt: "num", colorActive: false, friOnly: false },
+                { label: "Sortino Ratio", key: "sortino", fmt: "num", colorActive: false, friOnly: false },
+                { label: "Treynor Ratio", key: "treynor", fmt: "num", colorActive: false, friOnly: false },
+                { label: "Max Drawdown", key: "maxDrawdown", fmt: "pct", colorActive: false, friOnly: false },
+                { label: "Tracking Error", key: "trackingError", fmt: "pct", colorActive: false, friOnly: true }
+              ].filter(function(metric) {
+                if (metric.friOnly && !showActive) return false;
+                return true;
+              }).map(function(metric) {
                 var riskResults = riskData.results[riskWindow] || [];
                 return e("tr", { key: metric.key },
                   e("td", null, metric.label),
@@ -771,9 +787,16 @@ function App() {
           )
         ),
 
-        // Inception dates
-        e("div", { style: { fontSize: 11, color: "#94a3b8", padding: "8px 4px" } },
-          "Fee Reference Index: Blended composite — Aggressive (80% Nifty 50 TRI + 20% Nifty 50 Arb), Equity (100% Nifty 50 TRI), Moderate (50% Nifty 50 TRI + 50% Nifty 50 Arb). Risk-free rate: 0%."
+        // FRI Legend
+        e("div", { style: { fontSize: 11, color: "#94a3b8", padding: "8px 4px 0" } },
+          e("strong", { style: { color: "#64748b" } }, "FRI = Fee Reference Index"),
+          " (Blended composite benchmark used for fee calculation purposes)"
+        ),
+        e("div", { style: { fontSize: 11, color: "#94a3b8", padding: "2px 4px" } },
+          "Aggressive: 80% Nifty 50 TRI + 20% Nifty 50 Arb  |  Equity: 100% Nifty 50 TRI  |  Moderate: 50% Nifty 50 TRI + 50% Nifty 50 Arb"
+        ),
+        e("div", { style: { fontSize: 11, color: "#94a3b8", padding: "2px 4px" } },
+          "Risk-free rate: 0%"
         )
       )
     ),
