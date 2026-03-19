@@ -646,7 +646,7 @@ function App() {
           e("label", { className: "radio-toggle" },
             e("input", { type: "checkbox", checked: showActive, onChange: function() { setShowActive(!showActive); } }),
             e("span", { className: "radio-dot" }),
-            e("span", { className: "radio-label" }, "Show Active Returns")
+            e("span", { className: "radio-label" }, "Show Fee Reference Index Values")
           ),
           e("div", { style: { flex: 1 } }),
           e("div", { className: "export-group" },
@@ -664,13 +664,13 @@ function App() {
                 e("th", { style: { textAlign: "left" } }, "Strategy"),
                 timeWindowData.windows.map(function(tw) {
                   var cols = [
-                    e("th", { key: tw + "-port" }, tw + " Port"),
-                    e("th", { key: tw + "-bm" }, tw + " FRI")
+                    e("th", { key: tw + "-port" }, tw + (showActive ? " Port" : ""))
                   ];
                   if (showActive) {
+                    cols.push(e("th", { key: tw + "-bm" }, tw + " FRI"));
                     cols.push(e("th", { key: tw + "-act", style: { borderRight: "2px solid #e2e8f0" } }, tw + " Active"));
                   } else {
-                    cols[cols.length - 1] = e("th", { key: tw + "-bm", style: { borderRight: "2px solid #e2e8f0" } }, tw + " FRI");
+                    cols[cols.length - 1] = e("th", { key: tw + "-port", style: { borderRight: "2px solid #e2e8f0" } }, tw);
                   }
                   return cols;
                 })
@@ -683,18 +683,16 @@ function App() {
                   timeWindowData.windows.map(function(tw) {
                     var data = (timeWindowData.results[tw] || []).find(function(r) { return r.strategy === strat.name; });
                     if (!data) {
-                      var emptyCols = [e("td", { key: tw + "-p" }, "—"), e("td", { key: tw + "-b" }, "—")];
-                      if (showActive) emptyCols.push(e("td", { key: tw + "-a" }, "—"));
+                      var emptyCols = [e("td", { key: tw + "-p", style: showActive ? {} : { borderRight: "2px solid #e2e8f0" } }, "—")];
+                      if (showActive) { emptyCols.push(e("td", { key: tw + "-b" }, "—")); emptyCols.push(e("td", { key: tw + "-a", style: { borderRight: "2px solid #e2e8f0" } }, "—")); }
                       return emptyCols;
                     }
                     var cols = [
-                      e("td", { key: tw + "-p", className: cellClass(data.active) }, fmt(data.portfolio)),
-                      e("td", { key: tw + "-b", className: valColorClass(data.benchmark) }, fmt(data.benchmark))
+                      e("td", { key: tw + "-p", className: showActive ? cellClass(data.active) : "", style: showActive ? {} : { borderRight: "2px solid #e2e8f0" } }, fmt(data.portfolio))
                     ];
                     if (showActive) {
+                      cols.push(e("td", { key: tw + "-b", className: valColorClass(data.benchmark) }, fmt(data.benchmark)));
                       cols.push(e("td", { key: tw + "-a", className: cellClass(data.active, true), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.active)));
-                    } else {
-                      cols[cols.length - 1] = e("td", { key: tw + "-b", className: valColorClass(data.benchmark), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.benchmark));
                     }
                     return cols;
                   })
@@ -713,13 +711,13 @@ function App() {
                 e("th", { style: { textAlign: "left" } }, "Month"),
                 STRATEGIES.map(function(strat) {
                   var cols = [
-                    e("th", { key: strat.name + "-port" }, strat.name + " Port"),
-                    e("th", { key: strat.name + "-bm" }, strat.name + " FRI")
+                    e("th", { key: strat.name + "-port" }, strat.name + (showActive ? " Port" : ""))
                   ];
                   if (showActive) {
+                    cols.push(e("th", { key: strat.name + "-bm" }, strat.name + " FRI"));
                     cols.push(e("th", { key: strat.name + "-act", style: { borderRight: "2px solid #e2e8f0" } }, strat.name + " Active"));
                   } else {
-                    cols[cols.length - 1] = e("th", { key: strat.name + "-bm", style: { borderRight: "2px solid #e2e8f0" } }, strat.name + " FRI");
+                    cols[cols.length - 1] = e("th", { key: strat.name + "-port", style: { borderRight: "2px solid #e2e8f0" } }, strat.name);
                   }
                   return cols;
                 })
@@ -732,18 +730,16 @@ function App() {
                   STRATEGIES.map(function(strat) {
                     var data = entry.strategies[strat.name];
                     if (!data) {
-                      var emptyCols = [e("td", { key: strat.name + "-p" }, "—"), e("td", { key: strat.name + "-b" }, "—")];
-                      if (showActive) emptyCols.push(e("td", { key: strat.name + "-a" }, "—"));
+                      var emptyCols = [e("td", { key: strat.name + "-p", style: showActive ? {} : { borderRight: "2px solid #e2e8f0" } }, "—")];
+                      if (showActive) { emptyCols.push(e("td", { key: strat.name + "-b" }, "—")); emptyCols.push(e("td", { key: strat.name + "-a", style: { borderRight: "2px solid #e2e8f0" } }, "—")); }
                       return emptyCols;
                     }
                     var cols = [
-                      e("td", { key: strat.name + "-p", className: cellClass(data.active) }, fmt(data.portfolio)),
-                      e("td", { key: strat.name + "-b", className: valColorClass(data.benchmark) }, fmt(data.benchmark))
+                      e("td", { key: strat.name + "-p", className: showActive ? cellClass(data.active) : "", style: showActive ? {} : { borderRight: "2px solid #e2e8f0" } }, fmt(data.portfolio))
                     ];
                     if (showActive) {
+                      cols.push(e("td", { key: strat.name + "-b", className: valColorClass(data.benchmark) }, fmt(data.benchmark)));
                       cols.push(e("td", { key: strat.name + "-a", className: cellClass(data.active, true), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.active)));
-                    } else {
-                      cols[cols.length - 1] = e("td", { key: strat.name + "-b", className: valColorClass(data.benchmark), style: { borderRight: "2px solid #e2e8f0" } }, fmt(data.benchmark));
                     }
                     return cols;
                   })
