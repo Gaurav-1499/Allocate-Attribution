@@ -335,15 +335,18 @@ function App() {
           var lastDay = new Date(targetYear, targetMonth, 0).getDate();
           startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(lastDay).padStart(2, "0");
         } else {
+          // True rolling N-month return: same calendar day N months back
           var months = parseInt(tw);
           var endParts = endDate.split("-");
           var eYear = parseInt(endParts[0]);
           var eMonth = parseInt(endParts[1]);
+          var eDay = parseInt(endParts[2]);
           var targetMonth = eMonth - months;
           var targetYear = eYear;
           while (targetMonth <= 0) { targetMonth += 12; targetYear--; }
-          var lastDay = new Date(targetYear, targetMonth, 0).getDate();
-          startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(lastDay).padStart(2, "0");
+          var maxDay = new Date(targetYear, targetMonth, 0).getDate();
+          var targetDay = Math.min(eDay, maxDay);
+          startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(targetDay).padStart(2, "0");
         }
 
         var startNAV = findOnOrBefore(filteredNav, startDate);
@@ -458,15 +461,18 @@ function App() {
           var lastDay = new Date(targetYear, targetMonth, 0).getDate();
           startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(lastDay).padStart(2, "0");
         } else {
+          // True rolling N-month return: same calendar day N months back
           var months = parseInt(tw);
           var endParts = endDate.split("-");
           var eYear = parseInt(endParts[0]);
           var eMonth = parseInt(endParts[1]);
+          var eDay = parseInt(endParts[2]);
           var targetMonth = eMonth - months;
           var targetYear = eYear;
           while (targetMonth <= 0) { targetMonth += 12; targetYear--; }
-          var lastDay = new Date(targetYear, targetMonth, 0).getDate();
-          startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(lastDay).padStart(2, "0");
+          var maxDay = new Date(targetYear, targetMonth, 0).getDate();
+          var targetDay = Math.min(eDay, maxDay);
+          startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(targetDay).padStart(2, "0");
         }
 
         var fundDaily = getDailyReturns(filteredNav, startDate, endDate);
