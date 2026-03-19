@@ -90,12 +90,44 @@
     .footer a { color: #64748b; text-decoration: none; }
     .disclaimer { max-width: 1200px; margin: 24px auto 0; padding: 16px 20px; font-size: 10px; line-height: 1.5; color: #94a3b8; border-top: 1px solid #e2e8f0; text-align: justify; }
 
-    /* Responsive */
+    /* Responsive — Tablet */
+    @media (max-width: 1024px) {
+      .container { padding: 16px; }
+      .table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 600px; }
+    }
+
+    /* Responsive — Mobile */
     @media (max-width: 768px) {
+      .header { padding: 14px 16px; flex-direction: column; align-items: flex-start; gap: 8px; }
+      .header h1 { font-size: 17px; }
+      .header-right { width: 100%; justify-content: space-between; }
       .container { padding: 12px; }
-      .controls { gap: 10px; }
-      table { font-size: 12px; }
-      thead th, tbody td { padding: 8px 10px; }
+      .tab-bar { border-radius: 8px; }
+      .tab-btn { padding: 10px 12px; font-size: 13px; }
+      .controls { gap: 8px; flex-direction: column; align-items: stretch; }
+      .control-group { flex-wrap: wrap; }
+      .toggle-group { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .toggle-btn { padding: 6px 10px; font-size: 12px; white-space: nowrap; }
+      .export-group { justify-content: flex-end; }
+      .table-card { border-radius: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { font-size: 11px; min-width: 500px; }
+      thead th { padding: 8px 8px; font-size: 10px; letter-spacing: 0; }
+      tbody td { padding: 8px 8px; }
+      tbody td:first-child { position: sticky; left: 0; background: #fff; z-index: 1; box-shadow: 2px 0 4px rgba(0,0,0,0.06); min-width: 90px; }
+      thead th:first-child { position: sticky; left: 0; background: #f8fafc; z-index: 2; box-shadow: 2px 0 4px rgba(0,0,0,0.06); min-width: 90px; }
+      .disclaimer { padding: 12px 14px; font-size: 9px; }
+      body::after { font-size: 40px; letter-spacing: 4px; }
+    }
+
+    /* Responsive — Small phone */
+    @media (max-width: 400px) {
+      .header { padding: 10px 12px; }
+      .header h1 { font-size: 15px; }
+      .container { padding: 8px; }
+      table { font-size: 10px; }
+      thead th, tbody td { padding: 6px 6px; }
+      .toggle-btn { padding: 5px 8px; font-size: 11px; }
     }
   </style>
 </head>
