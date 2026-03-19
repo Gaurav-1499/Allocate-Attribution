@@ -341,16 +341,19 @@ function App() {
           // Calendar Year To Date: from Dec 31 of previous year
           var yr = parseInt(endDate.split("-")[0]);
           startDate = (yr - 1) + "-12-31";
+          // If inception is after CYTD start, use inception instead
+          if (inceptionDate > startDate) startDate = inceptionDate;
         } else if (tw === "FYTD") {
           // Financial Year To Date (Apr-Mar): from Mar 31 of current/previous FY
           var yr = parseInt(endDate.split("-")[0]);
           var mo = parseInt(endDate.split("-")[1]);
-          // If we're in Jan-Mar, FY started previous year's Mar 31
           if (mo <= 3) {
             startDate = (yr - 1) + "-03-31";
           } else {
             startDate = yr + "-03-31";
           }
+          // If inception is after FYTD start, use inception instead
+          if (inceptionDate > startDate) startDate = inceptionDate;
         } else if (tw === "1Y") {
           // Only compute if strategy has at least 1 full year of data
           var endParts = endDate.split("-");
@@ -472,6 +475,7 @@ function App() {
         } else if (tw === "CYTD") {
           var yr = parseInt(endDate.split("-")[0]);
           startDate = (yr - 1) + "-12-31";
+          if (inceptionDate > startDate) startDate = inceptionDate;
         } else if (tw === "FYTD") {
           var yr = parseInt(endDate.split("-")[0]);
           var mo = parseInt(endDate.split("-")[1]);
@@ -480,6 +484,7 @@ function App() {
           } else {
             startDate = yr + "-03-31";
           }
+          if (inceptionDate > startDate) startDate = inceptionDate;
         } else if (tw === "1Y") {
           var endParts = endDate.split("-");
           var oneYearBack = (parseInt(endParts[0]) - 1) + "-" + endParts[1] + "-" + endParts[2];
