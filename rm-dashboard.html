@@ -190,7 +190,7 @@ function getBMDailyReturns(trMap, arbMap, eqW, startDate, endDate) {
   return rets;
 }
 
-function computeRiskMetrics(fundDaily, bmDaily, navStart, navEnd, bmReturn) {
+function computeRiskMetrics(fundDaily, bmDaily, navStart, navEnd, bmReturn, calendarDays) {
   var bmMap = {};
   bmDaily.forEach(function(r) { bmMap[r.date] = r.ret; });
   var aF = [], aB = [];
@@ -207,9 +207,8 @@ function computeRiskMetrics(fundDaily, bmDaily, navStart, navEnd, bmReturn) {
   var fCum = navEnd && navStart ? (navEnd / navStart - 1) : 0;
   var bCum = bmReturn !== null ? bmReturn / 100 : 0;
 
-  // Annualisation
-  var tradingDays = n;
-  var years = tradingDays / 252;
+  // Annualisation — use calendar days for accurate year fraction
+  var years = calendarDays > 0 ? calendarDays / 365.25 : n / 252;
   var fAnn = years > 0 ? (Math.pow(1 + fCum, 1 / years) - 1) * 100 : fCum * 100;
   var bAnn = years > 0 ? (Math.pow(1 + bCum, 1 / years) - 1) * 100 : bCum * 100;
 
@@ -517,7 +516,12 @@ function App() {
         var endNAV = filteredNav[filteredNav.length - 1][1];
         var bmReturn = computeCompositeBMReturn(trMap, arbMap, strat.eqWeight, startDate, endDate);
 
-        var metrics = computeRiskMetrics(fundDaily, bmDaily, startNAV, endNAV, bmReturn);
+        // Calendar days for accurate annualisation
+        var sdParts = startDate.split("-");
+        var edParts = endDate.split("-");
+        var calendarDays = Math.round((new Date(+edParts[0], +edParts[1]-1, +edParts[2]) - new Date(+sdParts[0], +sdParts[1]-1, +sdParts[2])) / 86400000);
+
+        var metrics = computeRiskMetrics(fundDaily, bmDaily, startNAV, endNAV, bmReturn, calendarDays);
         if (metrics) {
           metrics.strategy = strat.name;
           metrics.fullName = strat.fullName;
