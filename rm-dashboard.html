@@ -166,6 +166,15 @@ function computeCompositeBMReturn(trMap, arbMap, eqW, startDate, endDate) {
   return (eqW * (trE / trS - 1) + (1 - eqW) * (arbE / arbS - 1)) * 100;
 }
 
+// Find the trading day strictly before a given date in BM data
+function findPriorTradingDay(trMap, dateStr) {
+  var dates = Object.keys(trMap).sort();
+  for (var i = dates.length - 1; i >= 0; i--) {
+    if (dates[i] < dateStr) return dates[i];
+  }
+  return null;
+}
+
 function getDailyReturns(navPoints, startDate, endDate) {
   var filtered = navPoints.filter(function(p) { return p[0] >= startDate && p[0] <= endDate; });
   var rets = [];
@@ -387,7 +396,9 @@ function App() {
 
         if (startNAV && endNAV) {
           var portReturn = (endNAV / startNAV - 1) * 100;
-          var bmReturn = computeCompositeBMReturn(trMap, arbMap, strat.eqWeight, startDate, endDate);
+          // For SI, OMS uses the prior trading day as BM start (to include inception day's BM return)
+          var bmStartDate = (tw === "SI") ? (findPriorTradingDay(trMap, startDate) || startDate) : startDate;
+          var bmReturn = computeCompositeBMReturn(trMap, arbMap, strat.eqWeight, bmStartDate, endDate);
           stratResults.push({
             strategy: strat.name,
             fullName: strat.fullName,
@@ -510,11 +521,13 @@ function App() {
           startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(targetDay).padStart(2, "0");
         }
 
+        // For SI, OMS uses the prior trading day as BM start (to include inception day's BM return)
+        var bmStartDate = (tw === "SI") ? (findPriorTradingDay(trMap, startDate) || startDate) : startDate;
         var fundDaily = getDailyReturns(filteredNav, startDate, endDate);
-        var bmDaily = getBMDailyReturns(trMap, arbMap, strat.eqWeight, startDate, endDate);
+        var bmDaily = getBMDailyReturns(trMap, arbMap, strat.eqWeight, bmStartDate, endDate);
         var startNAV = findOnOrBefore(filteredNav, startDate);
         var endNAV = filteredNav[filteredNav.length - 1][1];
-        var bmReturn = computeCompositeBMReturn(trMap, arbMap, strat.eqWeight, startDate, endDate);
+        var bmReturn = computeCompositeBMReturn(trMap, arbMap, strat.eqWeight, bmStartDate, endDate);
 
         // Calendar days for accurate annualisation
         var sdParts = startDate.split("-");
