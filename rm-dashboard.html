@@ -306,16 +306,10 @@ function App() {
   var _useState8 = useState("2026-03-31");
   var customAnalysisDate = _useState8[0], setCustomAnalysisDate = _useState8[1];
 
-  // Effective analysis date — defaults to 31 Mar 2026
+  // Effective analysis date — "Latest" caps at 31 Mar 2026, "Custom" uses chosen date
   var analysisDate = useMemo(function() {
     if (analysisDateMode === "custom" && customAnalysisDate) return customAnalysisDate;
-    // "latest" mode — find latest NAV date
-    var latest = "2000-01-01";
-    NAV_DATA.forEach(function(s) {
-      var last = s.d[s.d.length - 1][0];
-      if (last > latest) latest = last;
-    });
-    return latest;
+    return "2026-03-31";
   }, [analysisDateMode, customAnalysisDate]);
 
   var latestDataDate = useMemo(function() {

@@ -701,8 +701,8 @@ function AttributionDashboard() {
   const activeStrategies = selectedStrategies || strategies;
   const _allPeriods = useMemo(() => RAW_DATA.periods.filter(p => activeStrategies.includes(p.strategy)).sort((a, b) => a.startDate.localeCompare(b.startDate)), [activeStrategies]);
   const effectiveEndDate = useMemo(function() {
-    if (analysisDateMode === "latest") return null;
-    return customAnalysisDate || null;
+    if (analysisDateMode === "latest") return "2026-03-31";
+    return customAnalysisDate || "2026-03-31";
   }, [analysisDateMode, customAnalysisDate]);
   const periods = useMemo(function() {
     if (!effectiveEndDate) return _allPeriods;
