@@ -302,17 +302,8 @@ function App() {
   var _useState6 = useState("SI");
   var riskWindow = _useState6[0], setRiskWindow = _useState6[1];
 
-  // Effective analysis date
-  var analysisDate = useMemo(function() {
-    if (dateMode === "custom" && customDate) return customDate;
-    // Find latest NAV date
-    var latest = "2000-01-01";
-    NAV_DATA.forEach(function(s) {
-      var last = s.d[s.d.length - 1][0];
-      if (last > latest) latest = last;
-    });
-    return latest;
-  }, [dateMode, customDate]);
+  // Effective analysis date — hardcoded to 31 Mar 2026
+  var analysisDate = "2026-03-31";
 
   var latestDataDate = useMemo(function() {
     var latest = "2000-01-01";
@@ -634,15 +625,7 @@ function App() {
         e("div", { className: "subtitle" }, "Scheme Returns & Risk Dashboard")
       ),
       e("div", { className: "header-right" },
-        e("div", { className: "control-group" },
-          e("span", { className: "data-date", style: { marginRight: 8 } }, "Analysis Date:"),
-          e("div", { className: "toggle-group" },
-            e("button", { className: "toggle-btn" + (dateMode === "latest" ? " active" : ""), onClick: function() { setDateMode("latest"); } }, "Latest"),
-            e("button", { className: "toggle-btn" + (dateMode === "custom" ? " active" : ""), onClick: function() { setDateMode("custom"); } }, "Custom")
-          ),
-          dateMode === "custom" && e("input", { type: "date", className: "date-input", value: customDate, onChange: function(ev) { setCustomDate(ev.target.value); }, max: latestDataDate })
-        ),
-        e("div", { className: "data-date" }, "Data as of: " + fmtDate(analysisDate))
+        e("div", { className: "data-date", style: { fontSize: 14, fontWeight: 600 } }, "Data as of: 31 Mar 2026")
       )
     ),
 
