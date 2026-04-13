@@ -301,15 +301,20 @@ function App() {
   var returnView = _useState5[0], setReturnView = _useState5[1];
   var _useState6 = useState("SI");
   var riskWindow = _useState6[0], setRiskWindow = _useState6[1];
-  var _useState7 = useState("custom");
+  var _useState7 = useState("latest");
   var analysisDateMode = _useState7[0], setAnalysisDateMode = _useState7[1];
-  var _useState8 = useState("2026-03-31");
+  var _useState8 = useState("");
   var customAnalysisDate = _useState8[0], setCustomAnalysisDate = _useState8[1];
 
-  // Effective analysis date — "Latest" caps at 31 Mar 2026, "Custom" uses chosen date
+  // Effective analysis date — "Latest" uses latest NAV date, "Custom" uses chosen date
   var analysisDate = useMemo(function() {
     if (analysisDateMode === "custom" && customAnalysisDate) return customAnalysisDate;
-    return "2026-03-31";
+    var latest = "2000-01-01";
+    NAV_DATA.forEach(function(s) {
+      var last = s.d[s.d.length - 1][0];
+      if (last > latest) latest = last;
+    });
+    return latest;
   }, [analysisDateMode, customAnalysisDate]);
 
   var latestDataDate = useMemo(function() {
@@ -632,7 +637,7 @@ function App() {
         e("div", { className: "subtitle" }, "Scheme Returns & Risk Dashboard")
       ),
       e("div", { className: "header-right", style: { display: "flex", alignItems: "center", gap: 16 } },
-        e("div", { className: "data-date", style: { fontSize: 14, fontWeight: 600 } }, "Data as of: 31 Mar 2026"),
+        e("div", { className: "data-date", style: { fontSize: 14, fontWeight: 600 } }, "Data as of: ", fmtDate(latestDataDate)),
         e("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
           e("span", { style: { fontSize: 12, color: "#6B7280" } }, "Analysis Date:"),
           e("select", { value: analysisDateMode, onChange: function(ev) { setAnalysisDateMode(ev.target.value); }, style: { padding: "2px 6px", borderRadius: 4, border: "1px solid #D1D5DB", fontSize: 12 } },
