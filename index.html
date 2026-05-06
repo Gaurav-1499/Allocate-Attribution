@@ -1007,9 +1007,12 @@ function AttributionDashboard() {
 
     // Sheet 1: Month-on-Month Attribution
     var momRows = [];
-    var momMonths = [...new Set(periods.map(function(p) { return p.endDate; }))].sort();
+    var momMonthMap = {};
+    periods.forEach(function(p) { var mk = p.endDate.slice(0, 7); if (!momMonthMap[mk] || p.endDate > momMonthMap[mk]) momMonthMap[mk] = p.endDate; });
+    var momMonths = Object.keys(momMonthMap).sort().map(function(mk) { return momMonthMap[mk]; });
     momMonths.forEach(function(endDate) {
-      var monthPeriods = periods.filter(function(p) { return p.endDate === endDate; });
+      var mk = endDate.slice(0, 7);
+      var monthPeriods = periods.filter(function(p) { return p.endDate.slice(0, 7) === mk; });
       monthPeriods.forEach(function(p) {
         var stratName = p.strategy.replace("IONIC ALLOCATE PORTFOLIO ", "");
         p.rows.forEach(function(r) {
@@ -1170,16 +1173,18 @@ function AttributionDashboard() {
     var allStarts = periods.map(function(p) { return p.startDate; }).sort();
     var earliestStart = allStarts.length > 0 ? allStarts[0] : null;
 
-    // Get all months
+    // Get all months — group by calendar month (YYYY-MM), keep latest endDate per month
     var allMonths = [];
-    var monthSet = {};
+    var monthLatest = {};
     periods.forEach(function(p) {
-      if (!monthSet[p.endDate]) {
-        monthSet[p.endDate] = true;
-        allMonths.push(p.endDate);
+      var mk = p.endDate.slice(0, 7); // YYYY-MM
+      if (!monthLatest[mk] || p.endDate > monthLatest[mk]) {
+        monthLatest[mk] = p.endDate;
       }
     });
-    allMonths.sort();
+    Object.keys(monthLatest).sort().forEach(function(mk) {
+      allMonths.push(monthLatest[mk]);
+    });
 
     // For each time window, compute risk metrics for each strategy
     var windowResults = {};
@@ -1267,11 +1272,15 @@ function AttributionDashboard() {
     // Month-on-month returns for each strategy — USE NAV-to-NAV returns, NOT contribution sums
     var momResults = [];
     allMonths.forEach(function(endDate) {
+      var mk = endDate.slice(0, 7); // YYYY-MM for this month
       var entry = { month: monthLabel(endDate), endDate: endDate, strategies: {} };
       allStrats.forEach(function(strat) {
-        // Find the period for this strat+month
-        var period = periods.find(function(p) {
-          return p.strategy === strat && p.endDate === endDate;
+        // Find the latest period for this strat in this calendar month
+        var period = null;
+        periods.forEach(function(p) {
+          if (p.strategy === strat && p.endDate.slice(0, 7) === mk) {
+            if (!period || p.endDate > period.endDate) period = p;
+          }
         });
         if (!period) return;
 
