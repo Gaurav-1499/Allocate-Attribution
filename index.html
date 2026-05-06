@@ -1241,14 +1241,14 @@ function AttributionDashboard() {
             var sebiSE = sebiBMStartEnd(strat, startDate, endRef);
             metrics.sebiRisk = computeRiskMetrics(fundReturns, sebiDR, strat, filtered, sebiSE.start ? 1 : null, sebiSE.start && sebiSE.end ? sebiSE.end / sebiSE.start : null);
           } else { metrics.sebiRisk = null; }
-          // MF category return & risk metrics
-          var defaultCat = SCHEME_CAT_MAP[strat] ? SCHEME_CAT_MAP[strat][0] : null;
-          metrics.mfReturn = defaultCat ? mfCatReturn(defaultCat, startDate, endRef, "average") : null;
-          metrics.mfCat = defaultCat;
-          if (defaultCat) {
-            var mfDR = mfCatDailyReturns(defaultCat, startDate, endRef);
+          // MF category return & risk metrics — use user-selected category
+          var selCatTW = mfCatSelection[strat] || (SCHEME_CAT_MAP[strat] ? SCHEME_CAT_MAP[strat][0] : null);
+          metrics.mfReturn = selCatTW ? mfCatReturn(selCatTW, startDate, endRef, mfMode) : null;
+          metrics.mfCat = selCatTW;
+          if (selCatTW) {
+            var mfDR = mfCatDailyReturns(selCatTW, startDate, endRef);
             if (mfDR.length >= 5) {
-              var mfSE = mfCatStartEnd(defaultCat, startDate, endRef);
+              var mfSE = mfCatStartEnd(selCatTW, startDate, endRef);
               metrics.mfRisk = computeRiskMetrics(fundReturns, mfDR, strat, filtered, mfSE.start, mfSE.end);
             } else { metrics.mfRisk = null; }
           } else { metrics.mfRisk = null; }
@@ -1313,12 +1313,12 @@ function AttributionDashboard() {
         var friRet = friReturn(niftyTRMap, niftyArbMap, strat, momStartDate, endDate);
         // SEBI BM return for MoM
         var sebiRet = sebiBmReturn(strat, momStartDate, endDate);
-        // MF Cat return for MoM
-        var momDefaultCat = SCHEME_CAT_MAP[strat] ? SCHEME_CAT_MAP[strat][0] : null;
-        var mfRet = momDefaultCat ? mfCatReturn(momDefaultCat, momStartDate, endDate, "average") : null;
+        // MF Cat return for MoM — use user-selected category
+        var momCat = mfCatSelection[strat] || (SCHEME_CAT_MAP[strat] ? SCHEME_CAT_MAP[strat][0] : null);
+        var mfRet = momCat ? mfCatReturn(momCat, momStartDate, endDate, mfMode) : null;
 
         // Quartile positioning for MoM (portfolioReturn is already %, mfQuartilePos expects %)
-        var momQPos = momDefaultCat && portfolioReturn !== null ? mfQuartilePos(momDefaultCat, momStartDate, endDate, portfolioReturn) : null;
+        var momQPos = momCat && portfolioReturn !== null ? mfQuartilePos(momCat, momStartDate, endDate, portfolioReturn) : null;
 
         entry.strategies[strat] = {
           portfolio: portfolioReturn,
@@ -1329,7 +1329,7 @@ function AttributionDashboard() {
           sebiReturn: sebiRet,
           sebiBmName: SEBI_PARSED[strat] ? SEBI_PARSED[strat].name : null,
           mfReturn: mfRet,
-          mfCat: momDefaultCat,
+          mfCat: momCat,
           qPos: momQPos
         };
       });
@@ -1374,7 +1374,7 @@ function AttributionDashboard() {
       windowStartDates: windowStartDates,
       latestEnd: latestEnd
     };
-  }, [strategies, niftyTRMap, niftyArbMap, effectiveEndDate]);
+  }, [strategies, niftyTRMap, niftyArbMap, effectiveEndDate, mfCatSelection, mfMode]);
 
   // ─── Screen 1: Month on Month ───
   const momData = useMemo(() => {
@@ -2936,15 +2936,16 @@ function AttributionDashboard() {
       /*#__PURE__*/React.createElement("option", { value: "top25" }, "Top 25% by AUM")
     ),
     showMF && riskData && riskData.strategies.map(function(sn) {
-      var cats = SCHEME_CAT_MAP[sn] || [];
+      var allCats = Object.keys(CAT_LABELS);
       var short = sn.replace("IONIC ALLOCATE PORTFOLIO ", "");
+      var defaultCat = SCHEME_CAT_MAP[sn] ? SCHEME_CAT_MAP[sn][0] : allCats[0];
       return /*#__PURE__*/React.createElement("span", { key: sn, style: { fontSize: 11, display: "flex", alignItems: "center", gap: 3 } },
         /*#__PURE__*/React.createElement("span", { style: { color: "#6B7280" } }, short + ":"),
         /*#__PURE__*/React.createElement("select", {
-          value: mfCatSelection[sn] || (cats[0] || ""),
+          value: mfCatSelection[sn] || defaultCat,
           onChange: function(e) { setMfCatSelection(function(prev) { var n = Object.assign({}, prev); n[sn] = e.target.value; return n; }); },
           style: { border: "1px solid #D1D5DB", borderRadius: 4, padding: "2px 6px", fontSize: 10 }
-        }, cats.map(function(c) { return /*#__PURE__*/React.createElement("option", { key: c, value: c }, CAT_LABELS[c] || c); }))
+        }, allCats.map(function(c) { return /*#__PURE__*/React.createElement("option", { key: c, value: c }, CAT_LABELS[c] || c); }))
       );
     })
   ),
