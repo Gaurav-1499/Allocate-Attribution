@@ -1304,6 +1304,9 @@ function AttributionDashboard() {
         var momDefaultCat = SCHEME_CAT_MAP[strat] ? SCHEME_CAT_MAP[strat][0] : null;
         var mfRet = momDefaultCat ? mfCatReturn(momDefaultCat, period.startDate, period.endDate, "average") : null;
 
+        // Quartile positioning for MoM
+        var momQPos = momDefaultCat && portfolioReturn !== null ? mfQuartilePos(momDefaultCat, period.startDate, period.endDate, portfolioReturn / 100) : null;
+
         entry.strategies[strat] = {
           portfolio: portfolioReturn,
           benchmark: bmRet,
@@ -1313,7 +1316,8 @@ function AttributionDashboard() {
           sebiReturn: sebiRet,
           sebiBmName: SEBI_PARSED[strat] ? SEBI_PARSED[strat].name : null,
           mfReturn: mfRet,
-          mfCat: momDefaultCat
+          mfCat: momDefaultCat,
+          qPos: momQPos
         };
       });
       momResults.push(entry);
@@ -3138,6 +3142,7 @@ function AttributionDashboard() {
               if (showSEBI) cols.push(/*#__PURE__*/React.createElement("th", { key: sn + "-sebi", style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#8B5CF6" } }, sn + " (SEBI)"));
               if (showMF) cols.push(/*#__PURE__*/React.createElement("th", { key: sn + "-mf", style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#059669" } }, sn + " (MF)"));
               cols.push(/*#__PURE__*/React.createElement("th", { key: sn + "-a", style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#6B7280" } }, sn + " (Active)"));
+              if (showMF && showQ) cols.push(/*#__PURE__*/React.createElement("th", { key: sn + "-q", style: { padding: "8px 12px", textAlign: "center", borderBottom: "2px solid #E5E7EB", color: "#7C3AED" } }, sn + " (Q)"));
               return cols;
             }).flat()
           )
@@ -3158,6 +3163,7 @@ function AttributionDashboard() {
                   if (showSEBI) eCols.push(/*#__PURE__*/React.createElement("td", { key: strat + "-sebi-" + i, style: { padding: "8px 12px", textAlign: "right", color: "#D1D5DB" } }, dash2));
                   if (showMF) eCols.push(/*#__PURE__*/React.createElement("td", { key: strat + "-mf-" + i, style: { padding: "8px 12px", textAlign: "right", color: "#D1D5DB" } }, dash2));
                   eCols.push(/*#__PURE__*/React.createElement("td", { key: strat + "-a-" + i, style: { padding: "8px 12px", textAlign: "right", color: "#D1D5DB" } }, dash2));
+                  if (showMF && showQ) eCols.push(/*#__PURE__*/React.createElement("td", { key: strat + "-q-" + i, style: { padding: "8px 12px", textAlign: "center", color: "#D1D5DB" } }, dash2));
                   return eCols;
                 }
                 var dCols = [/*#__PURE__*/React.createElement("td", { key: strat + "-p-" + i, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: contribColor(d.portfolio) } }, fmt(d.portfolio))];
@@ -3165,6 +3171,16 @@ function AttributionDashboard() {
                 if (showSEBI) dCols.push(/*#__PURE__*/React.createElement("td", { key: strat + "-sebi-" + i, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: "#8B5CF6" } }, d.sebiReturn != null ? fmt(d.sebiReturn) : dash2));
                 if (showMF) dCols.push(/*#__PURE__*/React.createElement("td", { key: strat + "-mf-" + i, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: "#059669" } }, d.mfReturn != null ? fmt(d.mfReturn) : dash2));
                 dCols.push(/*#__PURE__*/React.createElement("td", { key: strat + "-a-" + i, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", fontWeight: 600, color: contribColor(d.active) } }, fmt(d.active)));
+                if (showMF && showQ) {
+                  var qp2 = d.qPos;
+                  var qColors2 = { 1: "#10B981", 2: "#3B82F6", 3: "#F59E0B", 4: "#EF4444" };
+                  dCols.push(/*#__PURE__*/React.createElement("td", { key: strat + "-q-" + i, style: { padding: "8px 12px", textAlign: "center" } },
+                    qp2 ? /*#__PURE__*/React.createElement("span", { style: { display: "inline-flex", alignItems: "center", gap: 4 } },
+                      /*#__PURE__*/React.createElement("span", { style: { background: qColors2[qp2.quartile] || "#6B7280", color: "white", fontWeight: 700, borderRadius: 4, padding: "1px 6px", fontSize: 11 } }, "Q" + qp2.quartile),
+                      /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: "#6B7280" } }, qp2.rank + "/" + qp2.total)
+                    ) : dash2
+                  ));
+                }
                 return dCols;
               }).flat()
             );
