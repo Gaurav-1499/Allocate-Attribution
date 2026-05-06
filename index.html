@@ -974,8 +974,10 @@ function AttributionDashboard() {
     return _allPeriods.filter(function(p) { return p.endDate <= effectiveEndDate; });
   }, [_allPeriods, effectiveEndDate]);
   const months = useMemo(() => {
-    const ms = [...new Set(periods.map(p => p.endDate))].sort();
-    return ms;
+    // Group by calendar month (YYYY-MM), keep latest endDate per month
+    const ml = {};
+    periods.forEach(p => { const mk = p.endDate.slice(0, 7); if (!ml[mk] || p.endDate > ml[mk]) ml[mk] = p.endDate; });
+    return Object.keys(ml).sort().map(mk => ml[mk]);
   }, [periods]);
 
   // Latest data date
@@ -1269,10 +1271,12 @@ function AttributionDashboard() {
       windowResults[tw] = stratResults;
     });
 
-    // Month-on-month returns for each strategy — USE NAV-to-NAV returns, NOT contribution sums
+    // Month-on-month returns for each strategy — USE NAV-to-NAV returns at month boundaries
     var momResults = [];
-    allMonths.forEach(function(endDate) {
+    allMonths.forEach(function(endDate, monthIdx) {
       var mk = endDate.slice(0, 7); // YYYY-MM for this month
+      // Previous month's end date (for NAV start reference)
+      var prevMonthEnd = monthIdx > 0 ? allMonths[monthIdx - 1] : null;
       var entry = { month: monthLabel(endDate), endDate: endDate, strategies: {} };
       allStrats.forEach(function(strat) {
         // Find the latest period for this strat in this calendar month
@@ -1285,36 +1289,36 @@ function AttributionDashboard() {
         if (!period) return;
 
         // NAV-based portfolio return for the month
+        // Use previous month-end as start ref (or first NAV if first month)
         var navSeries = getNAVSeries(strat);
         var portfolioReturn = null;
+        var momStartDate = prevMonthEnd || period.startDate;
         if (navSeries.length > 0) {
-          // Find NAV at period start and end
           var startNAV = null, endNAV = null;
           for (var ni = navSeries.length - 1; ni >= 0; ni--) {
-            if (navSeries[ni].date <= period.startDate && startNAV === null) startNAV = navSeries[ni].nav;
-            if (navSeries[ni].date <= period.endDate && endNAV === null) endNAV = navSeries[ni].nav;
+            if (navSeries[ni].date <= momStartDate && startNAV === null) startNAV = navSeries[ni].nav;
+            if (navSeries[ni].date <= endDate && endNAV === null) endNAV = navSeries[ni].nav;
           }
           if (startNAV && endNAV && startNAV > 0) {
             portfolioReturn = (endNAV / startNAV - 1) * 100;
           }
         }
 
-        // Benchmark return for that month
-        var eqW = getEqWeight(strat);
-        var eqBench = benchReturn(niftyTRMap, period.startDate, period.endDate);
-        var arbBench = benchReturn(niftyArbMap, period.startDate, period.endDate);
+        // Benchmark return for the full calendar month
+        var eqBench = benchReturn(niftyTRMap, momStartDate, endDate);
+        var arbBench = benchReturn(niftyArbMap, momStartDate, endDate);
         var bmRet = blendedBench(eqBench, arbBench, [strat]);
 
         // FRI return for MoM
-        var friRet = friReturn(niftyTRMap, niftyArbMap, strat, period.startDate, period.endDate);
+        var friRet = friReturn(niftyTRMap, niftyArbMap, strat, momStartDate, endDate);
         // SEBI BM return for MoM
-        var sebiRet = sebiBmReturn(strat, period.startDate, period.endDate);
+        var sebiRet = sebiBmReturn(strat, momStartDate, endDate);
         // MF Cat return for MoM
         var momDefaultCat = SCHEME_CAT_MAP[strat] ? SCHEME_CAT_MAP[strat][0] : null;
-        var mfRet = momDefaultCat ? mfCatReturn(momDefaultCat, period.startDate, period.endDate, "average") : null;
+        var mfRet = momDefaultCat ? mfCatReturn(momDefaultCat, momStartDate, endDate, "average") : null;
 
-        // Quartile positioning for MoM
-        var momQPos = momDefaultCat && portfolioReturn !== null ? mfQuartilePos(momDefaultCat, period.startDate, period.endDate, portfolioReturn / 100) : null;
+        // Quartile positioning for MoM (portfolioReturn is already %, mfQuartilePos expects %)
+        var momQPos = momDefaultCat && portfolioReturn !== null ? mfQuartilePos(momDefaultCat, momStartDate, endDate, portfolioReturn) : null;
 
         entry.strategies[strat] = {
           portfolio: portfolioReturn,
@@ -1377,8 +1381,10 @@ function AttributionDashboard() {
     const groupKey = drillLevel === "assetClass" ? "assetClass" : drillLevel === "category" ? "category" : "instrument";
     const result = [];
     const allGroups = new Set();
-    months.forEach(endDate => {
-      const monthPeriods = periods.filter(p => p.endDate === endDate);
+    months.forEach((endDate, monthIdx) => {
+      const mk = endDate.slice(0, 7);
+      const prevMonthEnd = monthIdx > 0 ? months[monthIdx - 1] : null;
+      const monthPeriods = periods.filter(p => p.endDate.slice(0, 7) === mk);
       const entry = {
         month: monthLabel(endDate),
         endDate
@@ -1402,8 +1408,8 @@ function AttributionDashboard() {
       });
       entry._total = Object.values(groups).reduce((s, v) => s + v, 0) / numStrats;
 
-      // Benchmark returns for this month
-      const startDate = monthPeriods[0]?.startDate;
+      // Benchmark returns for the full calendar month
+      const startDate = prevMonthEnd || monthPeriods[0]?.startDate;
       if (startDate) {
         const eqBench = benchReturn(niftyTRMap, startDate, endDate);
         const arbBench = benchReturn(niftyArbMap, startDate, endDate);
