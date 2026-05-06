@@ -280,6 +280,164 @@ function mfCatReturn(cat, sd, ed, mode) {
   return null;
 }
 
+// ─── SEBI Benchmark Daily Returns ───
+function sebiBMDailyReturns(sn, sd, ed) {
+  var info = SEBI_PARSED[sn];
+  if (!info) return [];
+  var dates = Object.keys(info.data).filter(function(d) { return d >= sd && d <= ed; }).sort();
+  var returns = [];
+  for (var i = 1; i < dates.length; i++) {
+    var prev = info.data[dates[i - 1]];
+    var cur = info.data[dates[i]];
+    if (prev > 0 && cur > 0) {
+      returns.push({ date: dates[i], ret: cur / prev - 1 });
+    }
+  }
+  return returns;
+}
+
+// ─── SEBI Benchmark Start/End Values ───
+function sebiBMStartEnd(sn, sd, ed) {
+  var info = SEBI_PARSED[sn];
+  if (!info) return { start: null, end: null };
+  var sv = null, ev = null;
+  for (var i = 0; i <= 5; i++) {
+    var d1 = new Date(sd + "T00:00:00"); d1.setDate(d1.getDate() - i);
+    var k1 = d1.toISOString().slice(0, 10);
+    if (info.data[k1] != null && sv == null) sv = info.data[k1];
+    var d2 = new Date(ed + "T00:00:00"); d2.setDate(d2.getDate() - i);
+    var k2 = d2.toISOString().slice(0, 10);
+    if (info.data[k2] != null && ev == null) ev = info.data[k2];
+  }
+  return { start: sv, end: ev };
+}
+
+// ─── MF Category Average Daily Returns ───
+function mfCatDailyReturns(cat, sd, ed) {
+  var funds = MF_PARSED[cat];
+  if (!funds || !funds.length) return [];
+  // Build per-fund daily return maps
+  var fundRetMaps = [];
+  funds.forEach(function(f) {
+    var navs = f.navs.filter(function(n) { return n.date >= sd && n.date <= ed; });
+    if (navs.length < 2) return;
+    var m = {};
+    for (var i = 1; i < navs.length; i++) {
+      if (navs[i].nav > 0 && navs[i - 1].nav > 0) {
+        m[navs[i].date] = navs[i].nav / navs[i - 1].nav - 1;
+      }
+    }
+    fundRetMaps.push(m);
+  });
+  if (!fundRetMaps.length) return [];
+  // Collect all dates
+  var dateSet = {};
+  fundRetMaps.forEach(function(m) { Object.keys(m).forEach(function(d) { dateSet[d] = true; }); });
+  var allDates = Object.keys(dateSet).sort();
+  var returns = [];
+  allDates.forEach(function(d) {
+    var sum = 0, cnt = 0;
+    fundRetMaps.forEach(function(m) { if (m[d] !== undefined) { sum += m[d]; cnt++; } });
+    if (cnt > 0) returns.push({ date: d, ret: sum / cnt });
+  });
+  return returns;
+}
+
+// ─── MF Category Average Start/End NAV index ───
+function mfCatStartEnd(cat, sd, ed) {
+  var funds = MF_PARSED[cat];
+  if (!funds || !funds.length) return { start: null, end: null };
+  // Compute average return across funds as a synthetic index
+  var rets = [];
+  funds.forEach(function(f) {
+    var ns = null, ne = null;
+    for (var i = f.navs.length - 1; i >= 0; i--) {
+      if (f.navs[i].date <= sd && ns == null) ns = f.navs[i];
+      if (f.navs[i].date <= ed && ne == null) ne = f.navs[i];
+    }
+    if (ns && ne && ns.nav > 0) rets.push(ne.nav / ns.nav);
+  });
+  if (!rets.length) return { start: null, end: null };
+  var avgRatio = rets.reduce(function(s, r) { return s + r; }, 0) / rets.length;
+  return { start: 1, end: avgRatio };
+}
+
+// ─── MF Quartile Position ───
+function mfQuartilePos(cat, sd, ed, schemeReturn) {
+  var funds = MF_PARSED[cat];
+  if (!funds || !funds.length) return null;
+  var allRets = [];
+  funds.forEach(function(f) {
+    var ns = null, ne = null;
+    for (var i = f.navs.length - 1; i >= 0; i--) {
+      if (f.navs[i].date <= sd && ns == null) ns = f.navs[i];
+      if (f.navs[i].date <= ed && ne == null) ne = f.navs[i];
+    }
+    if (ns && ne && ns.nav > 0) {
+      allRets.push({ name: f.name, ret: (ne.nav / ns.nav - 1) * 100, aum: f.aum });
+    }
+  });
+  if (!allRets.length) return null;
+  // Sort best to worst (descending)
+  allRets.sort(function(a, b) { return b.ret - a.ret; });
+  // Find rank (1-based, where 1 = best)
+  var rank = 1;
+  for (var i = 0; i < allRets.length; i++) {
+    if (schemeReturn >= allRets[i].ret) { rank = i + 1; break; }
+    if (i === allRets.length - 1) rank = allRets.length + 1;
+  }
+  var total = allRets.length + 1; // include the scheme itself
+  var percentile = ((total - rank) / (total - 1)) * 100;
+  var quartile = percentile >= 75 ? 1 : percentile >= 50 ? 2 : percentile >= 25 ? 3 : 4;
+  return { rank: rank, total: total, percentile: percentile, quartile: quartile, allRets: allRets };
+}
+
+// ─── Quartile Position Badge Component ───
+function QuartilePositionBadge(props) {
+  var qp = props.qp;
+  var schemeName = props.schemeName || "Scheme";
+  var schemeReturn = props.schemeReturn;
+  if (!qp) return null;
+  var qColors = { 1: "#10B981", 2: "#3B82F6", 3: "#F59E0B", 4: "#EF4444" };
+  var qColor = qColors[qp.quartile] || "#6B7280";
+  var allWithScheme = qp.allRets.slice();
+  allWithScheme.push({ name: schemeName, ret: schemeReturn, aum: 0, isScheme: true });
+  allWithScheme.sort(function(a, b) { return b.ret - a.ret; });
+  var maxRet = allWithScheme[0].ret;
+  var minRet = allWithScheme[allWithScheme.length - 1].ret;
+  var range = maxRet - minRet || 1;
+
+  return React.createElement("div", { style: { display: "inline-flex", alignItems: "center", gap: 10, padding: "6px 12px", background: "#F9FAFB", borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12, flexWrap: "wrap" } },
+    // Q badge
+    React.createElement("span", { style: { background: qColor, color: "white", fontWeight: 700, borderRadius: 4, padding: "2px 8px", fontSize: 13 } }, "Q" + qp.quartile),
+    // Rank text
+    React.createElement("span", { style: { color: "#374151" } }, "Rank " + qp.rank + " of " + qp.total + " funds"),
+    React.createElement("span", { style: { color: "#6B7280" } }, "(" + qp.percentile.toFixed(0) + "th percentile)"),
+    // Distribution bar
+    React.createElement("div", { style: { position: "relative", width: 200, height: 18, background: "#E5E7EB", borderRadius: 9, overflow: "hidden", flexShrink: 0 } },
+      // Q markers
+      React.createElement("div", { style: { position: "absolute", left: "25%", top: 0, bottom: 0, width: 1, background: "#9CA3AF", zIndex: 1 } }),
+      React.createElement("div", { style: { position: "absolute", left: "50%", top: 0, bottom: 0, width: 1, background: "#9CA3AF", zIndex: 1 } }),
+      React.createElement("div", { style: { position: "absolute", left: "75%", top: 0, bottom: 0, width: 1, background: "#9CA3AF", zIndex: 1 } }),
+      // Q labels
+      React.createElement("span", { style: { position: "absolute", left: "12.5%", top: 1, transform: "translateX(-50%)", fontSize: 8, color: "#6B7280", zIndex: 2 } }, "Q1"),
+      React.createElement("span", { style: { position: "absolute", left: "37.5%", top: 1, transform: "translateX(-50%)", fontSize: 8, color: "#6B7280", zIndex: 2 } }, "Q2"),
+      React.createElement("span", { style: { position: "absolute", left: "62.5%", top: 1, transform: "translateX(-50%)", fontSize: 8, color: "#6B7280", zIndex: 2 } }, "Q3"),
+      React.createElement("span", { style: { position: "absolute", left: "87.5%", top: 1, transform: "translateX(-50%)", fontSize: 8, color: "#6B7280", zIndex: 2 } }, "Q4"),
+      // Fund dots
+      allWithScheme.map(function(f, i) {
+        var pct = range > 0 ? ((maxRet - f.ret) / range) * 100 : 50;
+        if (pct < 1) pct = 1;
+        if (pct > 99) pct = 99;
+        if (f.isScheme) {
+          return React.createElement("div", { key: "scheme", style: { position: "absolute", left: pct + "%", top: 3, width: 12, height: 12, borderRadius: "50%", background: "#3B82F6", border: "2px solid white", transform: "translateX(-50%)", zIndex: 10 } });
+        }
+        return React.createElement("div", { key: i, style: { position: "absolute", left: pct + "%", top: 6, width: 6, height: 6, borderRadius: "50%", background: "#9CA3AF", opacity: 0.5, transform: "translateX(-50%)", zIndex: 3 } });
+      })
+    )
+  );
+}
+
 // Blended benchmark return for a strategy (or set of strategies)
 function blendedBench(eqBench, arbBench, activeStrategies) {
   if (eqBench === null || arbBench === null) {
@@ -1069,13 +1227,38 @@ function AttributionDashboard() {
           metrics.shortName = strat.replace("IONIC ALLOCATE PORTFOLIO ", "");
           // FRI return
           metrics.friReturn = friReturn(niftyTRMap, niftyArbMap, strat, startDate, endRef);
-          // SEBI benchmark return
+          // SEBI benchmark return & risk metrics
           metrics.sebiReturn = sebiBmReturn(strat, startDate, endRef);
           metrics.sebiBmName = SEBI_PARSED[strat] ? SEBI_PARSED[strat].name : null;
-          // MF category return (uses default category)
+          var sebiDR = sebiBMDailyReturns(strat, startDate, endRef);
+          if (sebiDR.length >= 5) {
+            var sebiSE = sebiBMStartEnd(strat, startDate, endRef);
+            metrics.sebiRisk = computeRiskMetrics(fundReturns, sebiDR, strat, filtered, sebiSE.start ? 1 : null, sebiSE.start && sebiSE.end ? sebiSE.end / sebiSE.start : null);
+          } else { metrics.sebiRisk = null; }
+          // MF category return & risk metrics
           var defaultCat = SCHEME_CAT_MAP[strat] ? SCHEME_CAT_MAP[strat][0] : null;
           metrics.mfReturn = defaultCat ? mfCatReturn(defaultCat, startDate, endRef, "average") : null;
           metrics.mfCat = defaultCat;
+          if (defaultCat) {
+            var mfDR = mfCatDailyReturns(defaultCat, startDate, endRef);
+            if (mfDR.length >= 5) {
+              var mfSE = mfCatStartEnd(defaultCat, startDate, endRef);
+              metrics.mfRisk = computeRiskMetrics(fundReturns, mfDR, strat, filtered, mfSE.start, mfSE.end);
+            } else { metrics.mfRisk = null; }
+          } else { metrics.mfRisk = null; }
+          // FRI risk metrics (FRI = composite with fixed weights, use same daily returns structure)
+          var friW = FRI_WEIGHTS[strat];
+          if (friW) {
+            var friDR = computeCompositeBMDailyReturns(niftyTRMap, niftyArbMap, friW.eq, startDate, endRef);
+            if (friDR.length >= 5) {
+              var friBmStart = getCompositeBMValue(niftyTRMap, niftyArbMap, friW.eq, startDate);
+              var friBmEnd = getCompositeBMValue(niftyTRMap, niftyArbMap, friW.eq, endRef);
+              var friStartIdx = friBmStart.tr && friBmStart.arb ? 1 : null;
+              var friEndIdx = friBmEnd.tr && friBmStart.tr && friBmEnd.arb && friBmStart.arb ?
+                (1 + friW.eq * (friBmEnd.tr / friBmStart.tr - 1) + (1 - friW.eq) * (friBmEnd.arb / friBmStart.arb - 1)) : null;
+              metrics.friRisk = computeRiskMetrics(fundReturns, friDR, strat, filtered, friStartIdx, friEndIdx);
+            } else { metrics.friRisk = null; }
+          } else { metrics.friRisk = null; }
           stratResults.push(metrics);
         }
       });
@@ -2813,6 +2996,30 @@ function AttributionDashboard() {
       )
     ),
 
+    // Quartile Positioning Badges for each time window
+    showMF && /*#__PURE__*/React.createElement("div", { style: { marginTop: 16, marginBottom: 8 } },
+      /*#__PURE__*/React.createElement("h4", { style: { fontSize: 13, fontWeight: 600, color: "#1F2937", marginBottom: 8 } }, "MF Category Quartile Positioning"),
+      riskData.timeWindows.map(function(tw) {
+        var results = riskData.windows[tw] || [];
+        if (results.length === 0) return null;
+        return /*#__PURE__*/React.createElement("div", { key: tw, style: { marginBottom: 10 } },
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4 } }, tw),
+          results.map(function(r) {
+            var selCat = mfCatSelection[r.strategy] || r.mfCat;
+            if (!selCat) return null;
+            var startDt = (riskData.windowStartDates || {})[tw] || "";
+            var endDt = riskData.latestEnd || "";
+            var qp = mfQuartilePos(selCat, startDt, endDt, r.fCum);
+            if (!qp) return null;
+            return /*#__PURE__*/React.createElement("div", { key: r.strategy + "-" + tw, style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 } },
+              /*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 500, color: "#374151", minWidth: 80 } }, r.shortName),
+              /*#__PURE__*/React.createElement(QuartilePositionBadge, { qp: qp, schemeName: r.shortName, schemeReturn: r.fCum })
+            );
+          })
+        );
+      })
+    ),
+
     /*#__PURE__*/React.createElement("h3", { style: { fontSize: 15, fontWeight: 600, marginTop: 24, marginBottom: 8, color: "#1F2937" } }, "Risk Metrics"),
     /*#__PURE__*/React.createElement("div", {
       style: { display: "flex", gap: 6, marginBottom: 12 }
@@ -2832,6 +3039,12 @@ function AttributionDashboard() {
       var results = riskData.windows[riskWindowTab] || [];
       if (results.length === 0) return /*#__PURE__*/React.createElement("div", { style: { color: "#9CA3AF", padding: 20 } }, "No data available.");
 
+      // Build column definitions per strategy: Portfolio + enabled benchmark columns
+      var bmCols = [{ key: "bm", label: "BM", color: "#EF4444", riskKey: null }];
+      if (showFRI) bmCols.push({ key: "fri", label: "FRI", color: "#EC4899", riskKey: "friRisk" });
+      if (showSEBI) bmCols.push({ key: "sebi", label: "SEBI", color: "#8B5CF6", riskKey: "sebiRisk" });
+      if (showMF) bmCols.push({ key: "mf", label: "MF Cat", color: "#059669", riskKey: "mfRisk" });
+
       return /*#__PURE__*/React.createElement("div", null,
         /*#__PURE__*/React.createElement("div", { style: { overflowX: "auto" } },
           /*#__PURE__*/React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } },
@@ -2839,10 +3052,13 @@ function AttributionDashboard() {
               /*#__PURE__*/React.createElement("tr", { style: { background: "#F3F4F6" } },
                 /*#__PURE__*/React.createElement("th", { style: { padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #E5E7EB" } }, "Metric"),
                 results.map(function(r) {
-                  return [
-                    /*#__PURE__*/React.createElement("th", { key: r.shortName + "-p", style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#3B82F6" } }, r.shortName + " (P)"),
-                    /*#__PURE__*/React.createElement("th", { key: r.shortName + "-b", style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#EF4444" } }, r.shortName + " (BM)")
+                  var cols = [
+                    /*#__PURE__*/React.createElement("th", { key: r.shortName + "-p", style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#3B82F6" } }, r.shortName + " (P)")
                   ];
+                  bmCols.forEach(function(bc) {
+                    cols.push(/*#__PURE__*/React.createElement("th", { key: r.shortName + "-" + bc.key, style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: bc.color } }, r.shortName + " (" + bc.label + ")"));
+                  });
+                  return cols;
                 }).flat()
               )
             ),
@@ -2851,7 +3067,7 @@ function AttributionDashboard() {
                 { key: "sharpe", label: "Sharpe Ratio", pKey: "fSharpe", bKey: "bSharpe", isFmt: false },
                 { key: "sortino", label: "Sortino Ratio", pKey: "fSortino", bKey: "bSortino", isFmt: false },
                 { key: "treynor", label: "Treynor Ratio (%)", pKey: "fTreynor", bKey: "bTreynor", isFmt: true },
-                { key: "beta", label: "Beta", pKey: "beta", bKey: null, isFmt: false },
+                { key: "beta", label: "Beta", pKey: "beta", bKey: "beta", isFmt: false },
                 { key: "sd", label: "Std Dev (Ann %)", pKey: "fSD", bKey: "bSD", isFmt: true },
                 { key: "dd", label: "Downside Dev (Ann %)", pKey: "fDD", bKey: "bDD", isFmt: true }
               ].map(function(metric, mi) {
@@ -2862,17 +3078,25 @@ function AttributionDashboard() {
                   /*#__PURE__*/React.createElement("td", { style: { padding: "8px 12px", fontWeight: 600 } }, metric.label),
                   results.map(function(r) {
                     var pVal = r[metric.pKey];
-                    var bVal = metric.bKey ? r[metric.bKey] : null;
                     var fmtVal = function(v) {
                       if (v === null || v === undefined) return "\u2014";
                       if (metric.isFmt) return fmt(v);
                       return v.toFixed(3);
                     };
-                    return [
-                      /*#__PURE__*/React.createElement("td", { key: r.shortName + "-p-" + metric.key, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace" } }, fmtVal(pVal)),
-                      /*#__PURE__*/React.createElement("td", { key: r.shortName + "-b-" + metric.key, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: "#6B7280" } },
-                        metric.key === "beta" ? "1.000" : fmtVal(bVal))
+                    var cells = [
+                      /*#__PURE__*/React.createElement("td", { key: r.shortName + "-p-" + metric.key, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace" } }, fmtVal(pVal))
                     ];
+                    bmCols.forEach(function(bc) {
+                      var riskObj = bc.riskKey ? r[bc.riskKey] : r; // null riskKey = use main metrics (BM column)
+                      var bVal;
+                      if (metric.key === "beta") {
+                        bVal = riskObj ? riskObj.beta : null;
+                      } else {
+                        bVal = riskObj && metric.bKey ? riskObj[metric.bKey] : null;
+                      }
+                      cells.push(/*#__PURE__*/React.createElement("td", { key: r.shortName + "-" + bc.key + "-" + metric.key, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: "#6B7280" } }, fmtVal(bVal)));
+                    });
+                    return cells;
                   }).flat()
                 );
               })
@@ -2984,6 +3208,36 @@ function AttributionDashboard() {
         if (metrics) {
           metrics.strategy = strat;
           metrics.shortName = strat.replace("IONIC ALLOCATE PORTFOLIO ", "");
+          // SEBI risk metrics for custom range
+          var sebiDR2 = sebiBMDailyReturns(strat, riskDynStart, riskDynEnd);
+          if (sebiDR2.length >= 5) {
+            var sebiSE2 = sebiBMStartEnd(strat, riskDynStart, riskDynEnd);
+            metrics.sebiRisk = computeRiskMetrics(fundReturns, sebiDR2, strat, filtered, sebiSE2.start ? 1 : null, sebiSE2.start && sebiSE2.end ? sebiSE2.end / sebiSE2.start : null);
+          } else { metrics.sebiRisk = null; }
+          // MF risk metrics for custom range
+          var defaultCat2 = SCHEME_CAT_MAP[strat] ? SCHEME_CAT_MAP[strat][0] : null;
+          var selCat2 = mfCatSelection[strat] || defaultCat2;
+          metrics.mfCat = selCat2;
+          if (selCat2) {
+            var mfDR2 = mfCatDailyReturns(selCat2, riskDynStart, riskDynEnd);
+            if (mfDR2.length >= 5) {
+              var mfSE2 = mfCatStartEnd(selCat2, riskDynStart, riskDynEnd);
+              metrics.mfRisk = computeRiskMetrics(fundReturns, mfDR2, strat, filtered, mfSE2.start, mfSE2.end);
+            } else { metrics.mfRisk = null; }
+          } else { metrics.mfRisk = null; }
+          // FRI risk metrics for custom range
+          var friW2 = FRI_WEIGHTS[strat];
+          if (friW2) {
+            var friDR2 = computeCompositeBMDailyReturns(niftyTRMap, niftyArbMap, friW2.eq, riskDynStart, riskDynEnd);
+            if (friDR2.length >= 5) {
+              var friBmStart2 = getCompositeBMValue(niftyTRMap, niftyArbMap, friW2.eq, riskDynStart);
+              var friBmEnd2 = getCompositeBMValue(niftyTRMap, niftyArbMap, friW2.eq, riskDynEnd);
+              var friStartIdx2 = friBmStart2.tr && friBmStart2.arb ? 1 : null;
+              var friEndIdx2 = friBmEnd2.tr && friBmStart2.tr && friBmEnd2.arb && friBmStart2.arb ?
+                (1 + friW2.eq * (friBmEnd2.tr / friBmStart2.tr - 1) + (1 - friW2.eq) * (friBmEnd2.arb / friBmStart2.arb - 1)) : null;
+              metrics.friRisk = computeRiskMetrics(fundReturns, friDR2, strat, filtered, friStartIdx2, friEndIdx2);
+            } else { metrics.friRisk = null; }
+          } else { metrics.friRisk = null; }
           results.push(metrics);
         }
       });
@@ -3024,53 +3278,86 @@ function AttributionDashboard() {
           )
         ),
 
-        /*#__PURE__*/React.createElement("h3", { style: { fontSize: 15, fontWeight: 600, marginTop: 24, marginBottom: 8, color: "#1F2937" } }, "Risk Metrics — Custom Range"),
-        /*#__PURE__*/React.createElement("div", { style: { overflowX: "auto" } },
-          /*#__PURE__*/React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } },
-            /*#__PURE__*/React.createElement("thead", null,
-              /*#__PURE__*/React.createElement("tr", { style: { background: "#F3F4F6" } },
-                /*#__PURE__*/React.createElement("th", { style: { padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #E5E7EB" } }, "Metric"),
-                results.map(function(r) {
-                  return [
-                    /*#__PURE__*/React.createElement("th", { key: r.shortName + "-p", style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#3B82F6" } }, r.shortName + " (P)"),
-                    /*#__PURE__*/React.createElement("th", { key: r.shortName + "-b", style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#EF4444" } }, r.shortName + " (BM)")
-                  ];
-                }).flat()
-              )
-            ),
-            /*#__PURE__*/React.createElement("tbody", null,
-              [
-                { key: "sharpe", label: "Sharpe Ratio", pKey: "fSharpe", bKey: "bSharpe", isFmt: false },
-                { key: "sortino", label: "Sortino Ratio", pKey: "fSortino", bKey: "bSortino", isFmt: false },
-                { key: "treynor", label: "Treynor Ratio (%)", pKey: "fTreynor", bKey: "bTreynor", isFmt: true },
-                { key: "beta", label: "Beta", pKey: "beta", bKey: null, isFmt: false },
-                { key: "sd", label: "Std Dev (Ann %)", pKey: "fSD", bKey: "bSD", isFmt: true },
-                { key: "dd", label: "Downside Dev (Ann %)", pKey: "fDD", bKey: "bDD", isFmt: true }
-              ].map(function(metric, mi) {
-                return /*#__PURE__*/React.createElement("tr", {
-                  key: metric.key,
-                  style: { borderBottom: "1px solid #E5E7EB", background: mi % 2 === 0 ? "white" : "#F9FAFB" }
-                },
-                  /*#__PURE__*/React.createElement("td", { style: { padding: "8px 12px", fontWeight: 600 } }, metric.label),
-                  results.map(function(r) {
-                    var pVal = r[metric.pKey];
-                    var bVal = metric.bKey ? r[metric.bKey] : null;
-                    var fmtVal = function(v) {
-                      if (v === null || v === undefined) return "\u2014";
-                      if (metric.isFmt) return fmt(v);
-                      return v.toFixed(3);
-                    };
-                    return [
-                      /*#__PURE__*/React.createElement("td", { key: r.shortName + "-p-" + metric.key, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace" } }, fmtVal(pVal)),
-                      /*#__PURE__*/React.createElement("td", { key: r.shortName + "-b-" + metric.key, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: "#6B7280" } },
-                        metric.key === "beta" ? "1.000" : fmtVal(bVal))
-                    ];
-                  }).flat()
-                );
-              })
-            )
-          )
+        // Quartile Positioning Badges for custom range
+        showMF && /*#__PURE__*/React.createElement("div", { style: { marginTop: 16, marginBottom: 8 } },
+          /*#__PURE__*/React.createElement("h4", { style: { fontSize: 13, fontWeight: 600, color: "#1F2937", marginBottom: 8 } }, "MF Category Quartile Positioning"),
+          results.map(function(r) {
+            var selCat = mfCatSelection[r.strategy] || r.mfCat || (SCHEME_CAT_MAP[r.strategy] ? SCHEME_CAT_MAP[r.strategy][0] : null);
+            if (!selCat) return null;
+            var qp = mfQuartilePos(selCat, riskDynStart, riskDynEnd, r.fCum);
+            if (!qp) return null;
+            return /*#__PURE__*/React.createElement("div", { key: r.strategy + "-custom-q", style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 } },
+              /*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 500, color: "#374151", minWidth: 80 } }, r.shortName),
+              /*#__PURE__*/React.createElement(QuartilePositionBadge, { qp: qp, schemeName: r.shortName, schemeReturn: r.fCum })
+            );
+          })
         ),
+
+        /*#__PURE__*/React.createElement("h3", { style: { fontSize: 15, fontWeight: 600, marginTop: 24, marginBottom: 8, color: "#1F2937" } }, "Risk Metrics — Custom Range"),
+        (function() {
+          var bmCols2 = [{ key: "bm", label: "BM", color: "#EF4444", riskKey: null }];
+          if (showFRI) bmCols2.push({ key: "fri", label: "FRI", color: "#EC4899", riskKey: "friRisk" });
+          if (showSEBI) bmCols2.push({ key: "sebi", label: "SEBI", color: "#8B5CF6", riskKey: "sebiRisk" });
+          if (showMF) bmCols2.push({ key: "mf", label: "MF Cat", color: "#059669", riskKey: "mfRisk" });
+
+          return /*#__PURE__*/React.createElement("div", { style: { overflowX: "auto" } },
+            /*#__PURE__*/React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } },
+              /*#__PURE__*/React.createElement("thead", null,
+                /*#__PURE__*/React.createElement("tr", { style: { background: "#F3F4F6" } },
+                  /*#__PURE__*/React.createElement("th", { style: { padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #E5E7EB" } }, "Metric"),
+                  results.map(function(r) {
+                    var cols = [
+                      /*#__PURE__*/React.createElement("th", { key: r.shortName + "-p", style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#3B82F6" } }, r.shortName + " (P)")
+                    ];
+                    bmCols2.forEach(function(bc) {
+                      cols.push(/*#__PURE__*/React.createElement("th", { key: r.shortName + "-" + bc.key, style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: bc.color } }, r.shortName + " (" + bc.label + ")"));
+                    });
+                    return cols;
+                  }).flat()
+                )
+              ),
+              /*#__PURE__*/React.createElement("tbody", null,
+                [
+                  { key: "sharpe", label: "Sharpe Ratio", pKey: "fSharpe", bKey: "bSharpe", isFmt: false },
+                  { key: "sortino", label: "Sortino Ratio", pKey: "fSortino", bKey: "bSortino", isFmt: false },
+                  { key: "treynor", label: "Treynor Ratio (%)", pKey: "fTreynor", bKey: "bTreynor", isFmt: true },
+                  { key: "beta", label: "Beta", pKey: "beta", bKey: "beta", isFmt: false },
+                  { key: "sd", label: "Std Dev (Ann %)", pKey: "fSD", bKey: "bSD", isFmt: true },
+                  { key: "dd", label: "Downside Dev (Ann %)", pKey: "fDD", bKey: "bDD", isFmt: true }
+                ].map(function(metric, mi) {
+                  return /*#__PURE__*/React.createElement("tr", {
+                    key: metric.key,
+                    style: { borderBottom: "1px solid #E5E7EB", background: mi % 2 === 0 ? "white" : "#F9FAFB" }
+                  },
+                    /*#__PURE__*/React.createElement("td", { style: { padding: "8px 12px", fontWeight: 600 } }, metric.label),
+                    results.map(function(r) {
+                      var pVal = r[metric.pKey];
+                      var fmtVal = function(v) {
+                        if (v === null || v === undefined) return "\u2014";
+                        if (metric.isFmt) return fmt(v);
+                        return v.toFixed(3);
+                      };
+                      var cells = [
+                        /*#__PURE__*/React.createElement("td", { key: r.shortName + "-p-" + metric.key, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace" } }, fmtVal(pVal))
+                      ];
+                      bmCols2.forEach(function(bc) {
+                        var riskObj = bc.riskKey ? r[bc.riskKey] : r;
+                        var bVal;
+                        if (metric.key === "beta") {
+                          bVal = riskObj ? riskObj.beta : null;
+                        } else {
+                          bVal = riskObj && metric.bKey ? riskObj[metric.bKey] : null;
+                        }
+                        cells.push(/*#__PURE__*/React.createElement("td", { key: r.shortName + "-" + bc.key + "-" + metric.key, style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: "#6B7280" } }, fmtVal(bVal)));
+                      });
+                      return cells;
+                    }).flat()
+                  );
+                })
+              )
+            )
+          );
+        })(),
         /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: "#9CA3AF", marginTop: 8 } }, "Risk-free rate: 0%. Risk metrics computed from daily NAV returns.")
       );
     })()
