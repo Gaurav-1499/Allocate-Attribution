@@ -1,4 +1,7 @@
-# Only commit index.html — keep everything else private
+# Commit only the dashboard HTMLs — keep all raw data private
 *
 !.gitignore
 !index.html
+!attribution-dashboard.html
+!rm-dashboard.html
+!ionic-attribution-risk.html
