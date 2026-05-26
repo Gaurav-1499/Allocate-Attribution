@@ -199,8 +199,8 @@ var SEBI_PARSED = (function() {
   Object.keys(SEBI_DATA).forEach(function(sn) {
     var info = SEBI_DATA[sn];
     var dataMap = {};
-    info.data.forEach(function(pair) { dataMap[pair[0]] = pair[1]; });
-    result[sn] = { name: info.name, data: dataMap };
+    info.d.forEach(function(pair) { dataMap[pair[0]] = pair[1]; });
+    result[sn] = { name: info.n, data: dataMap };
   });
   return result;
 })();
