@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-06-03.2 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-06-03.3 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ionic Allocate — Attribution Analysis</title>
   <style>
@@ -1195,10 +1195,10 @@ function AttributionDashboard() {
     // For each time window, compute risk metrics for each strategy
     var windowResults = {};
     TIME_WINDOWS.forEach(function(tw) {
-      var startDate;
+      var outerStart;
       var endRef = latestEnd;
       if (tw === "SI") {
-        startDate = earliestStart;
+        outerStart = earliestStart;
       } else {
         // Month-end to month-end: go back N months and use the LAST DAY of that month
         var months = parseInt(tw);
@@ -1210,13 +1210,15 @@ function AttributionDashboard() {
         while (targetMonth <= 0) { targetMonth += 12; targetYear--; }
         // Last day of targetMonth
         var lastDay = new Date(targetYear, targetMonth, 0).getDate();
-        startDate = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(lastDay).padStart(2, "0");
+        outerStart = targetYear + "-" + String(targetMonth).padStart(2, "0") + "-" + String(lastDay).padStart(2, "0");
       }
 
       var stratResults = [];
       allStrats.forEach(function(strat) {
         var navSeries = getNAVSeries(strat);
         if (navSeries.length === 0) return;
+        // PER-STRATEGY SI: each scheme uses its own first NAV date as inception
+        var startDate = (tw === "SI" && navSeries[0] && navSeries[0].date) ? navSeries[0].date.toISOString().slice(0,10) : outerStart;
         var filtered = filterByDateRange(navSeries, startDate, endRef);
         var fundReturns = parseDailyReturns(filtered);
 
