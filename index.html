@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-06-03.3 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-06-03.4 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ionic Allocate — Attribution Analysis</title>
   <style>
@@ -647,8 +647,16 @@ function computeRiskMetrics(fundDailyReturns, bmDailyReturns, label, navSeries, 
     bCum -= 1;
   }
 
-  // Annualized returns
-  var years = n / 252;
+  // Annualized returns — calendar-day basis (matches rm-dashboard)
+  var years;
+  if (navSeries && navSeries.length >= 2 && navSeries[0].date && navSeries[navSeries.length-1].date) {
+    var _firstDate = navSeries[0].date;
+    var _lastDate = navSeries[navSeries.length-1].date;
+    var _calDays = (_lastDate - _firstDate) / (1000*60*60*24);
+    years = _calDays > 0 ? _calDays / 365.25 : n / 252;
+  } else {
+    years = n / 252;
+  }
   var fAnn = Math.pow(1 + fCum, 1 / years) - 1;
   var bAnn = Math.pow(1 + bCum, 1 / years) - 1;
 
