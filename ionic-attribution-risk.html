@@ -3,7 +3,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-06-03.7 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Build: v2026-06-03.8 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IONIC Attribution & Risk Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -629,12 +629,7 @@ var mfCatReturn = function mfCatReturn(mfD, cat, sd, ed, mode){var __k=(cat+"|"+
   try {
     for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
       var f = _step8.value;
-      var ns = f.navs.filter(function (d) {
-        return d.date <= sd;
-      }).pop();
-      var ne = f.navs.filter(function (d) {
-        return d.date <= ed;
-      }).pop();
+      var ns=null,ne=null;for(var _j=f.navs.length-1;_j>=0;_j--){var _nv=f.navs[_j];if(ne==null&&_nv.date<=ed)ne=_nv;if(ns==null&&_nv.date<=sd){ns=_nv;break;}}
       if (ns && ne && ns.nav > 0) {
         rets.push({
           ret: ne.nav / ns.nav - 1,
@@ -686,12 +681,7 @@ var mfQuartilePos = function mfQuartilePos(mfD, cat, sd, ed, schemeRet){var __k=
   try {
     for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
       var f = _step9.value;
-      var ns = f.navs.filter(function (d) {
-        return d.date <= sd;
-      }).pop();
-      var ne = f.navs.filter(function (d) {
-        return d.date <= ed;
-      }).pop();
+      var ns=null,ne=null;for(var _j=f.navs.length-1;_j>=0;_j--){var _nv=f.navs[_j];if(ne==null&&_nv.date<=ed)ne=_nv;if(ns==null&&_nv.date<=sd){ns=_nv;break;}}
       if (ns && ne && ns.nav > 0) rets.push({
         name: f.name.replace(/\(G\)-Direct Plan|\(IDCW\)-Direct Plan/g, "").trim(),
         ret: ne.nav / ns.nav - 1,
@@ -2823,12 +2813,7 @@ var RiskScr = function RiskScr(_ref15) {
             sd2 = new Date(ref);
             sd2.setMonth(sd2.getMonth() - mo);
           }
-          var ns = nf.data.filter(function (d) {
-              return d.date <= sd2;
-            }).pop() || nf.data[0],
-            ne = nf.data.filter(function (d) {
-              return d.date <= ed;
-            }).pop();
+          var ns=null,ne=null;for(var _j=nf.data.length-1;_j>=0;_j--){var _nv=nf.data[_j];if(ne==null&&_nv.date<=ed)ne=_nv;if(ns==null&&_nv.date<=sd2)ns=_nv;if(ns&&ne)break;}if(!ns)ns=nf.data[0];
           var sr = null;
           if (ns && ne && ns.nav > 0) sr = ne.nav / ns.nav - 1;
           var fri_r = bmS ? friR(bmS, sn, sd2, ed) : null;
@@ -2943,12 +2928,7 @@ var RiskScr = function RiskScr(_ref15) {
           return d.strategy === sn;
         });
         if (!nf) return 1; // continue
-        var ns = nf.data.filter(function (d) {
-          return d.date <= sd2;
-        }).pop() || nf.data[0];
-        var ne = nf.data.filter(function (d) {
-          return d.date <= ed;
-        }).pop();
+        var ns=null,ne=null;for(var _j=nf.data.length-1;_j>=0;_j--){var _nv=nf.data[_j];if(ne==null&&_nv.date<=ed)ne=_nv;if(ns==null&&_nv.date<=sd2)ns=_nv;if(ns&&ne)break;}if(!ns)ns=nf.data[0];
         var sr = ns && ne && ns.nav > 0 ? ne.nav / ns.nav - 1 : null;
         var fri_r = bmS ? friR(bmS, sn, sd2, ed) : null;
         var sebi_r = sebiBmR(sebiD, sn, sd2, ed);
