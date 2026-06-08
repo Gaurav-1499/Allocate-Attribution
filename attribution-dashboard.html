@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-06-03.9 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-06-03.10 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ionic Attribution Dashboard</title>
   <style>
@@ -236,36 +236,63 @@ stratList.forEach(function(strat){
 var pct=function(v){return v==null||isNaN(v)?"—":(v>=0?"+":"")+(v*100).toFixed(2)+"%";};
 var pctDirect=function(v){return v==null||isNaN(v)?"—":(v>=0?"+":"")+v.toFixed(2)+"%";};
 var num=function(v){return v==null||isNaN(v)?"—":v.toFixed(2);};
-var qLbl=function(qd){if(!qd)return"—";var q=qd.quartile,p=qd.percentile,rk=qd.rank,t=qd.total;return"Q"+q+" • "+rk+"/"+t+" • "+p+"%";};
+var qLbl=function(qd){if(!qd)return"—";return"Q"+qd.quartile+" • "+qd.rank+"/"+qd.total+" • "+qd.percentile+"%";};
 var qColor=function(qd){if(!qd)return"#9CA3AF";return qd.quartile===1?"#16A34A":qd.quartile===2?"#3B82F6":qd.quartile===3?"#F59E0B":"#DC2626";};
-var renderTbl=function(title,valueFn,headerColor,note){
-return React.createElement("div",{key:title,style:{marginBottom:18}},
-React.createElement("h4",{style:{margin:"14px 0 6px",fontSize:14,fontWeight:700,color:headerColor||"#1F2937"}},title,note?React.createElement("span",{style:{marginLeft:8,fontSize:11,fontWeight:500,color:"#6B7280"}},note):null),
-React.createElement("div",{style:{overflowX:"auto"}},
-React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontSize:12,background:"white",border:"1px solid #E5E7EB",borderRadius:8}},
-React.createElement("thead",null,React.createElement("tr",{style:{background:"#F9FAFB",borderBottom:"2px solid #E5E7EB"}},
-React.createElement("th",{style:{padding:"8px 12px",textAlign:"left",fontWeight:600,color:"#6B7280"}},"Scheme"),
-winKeys.map(function(wk){return React.createElement("th",{key:wk,style:{padding:"8px 12px",textAlign:"right",fontWeight:600,color:"#6B7280"}},wk);})
-)),
-React.createElement("tbody",null,
-stratList.map(function(strat){var r=allR[strat];return React.createElement("tr",{key:strat,style:{borderBottom:"1px solid #F3F4F6"}},
-React.createElement("td",{style:{padding:"8px 12px",fontWeight:600,color:"#111827"}},r.short),
-winKeys.map(function(wk){var v=valueFn(strat,wk,r);return React.createElement("td",{key:wk,style:_objectSpread({padding:"8px 12px",textAlign:"right",fontFamily:"monospace"},(v&&typeof v==="object"&&v.style)?v.style:{})},(v&&typeof v==="object"&&v.text)?v.text:v);})
-);})
-))));
+var stratColor={"MODERATE":"#10B981","AGGRESSIVE":"#EF4444","EQUITY":"#3B82F6"};
+// Build metric rows definitions
+var buildMetrics=function(){
+  var rows=[];
+  rows.push({label:"Scheme Return",fn:function(r,wk){var rm=r.wr[wk];return rm?{text:pct(rm.fCum),color:rm.fCum>=0?"#16A34A":"#DC2626",bold:true}:null;}});
+  rows.push({label:"Composite Benchmark",fn:function(r,wk){var rm=r.wr[wk];return rm?{text:pct(rm.bCum),color:"#6B7280"}:null;}});
+  rows.push({label:"Active vs Comp BM",fn:function(r,wk){var rm=r.wr[wk];if(!rm)return null;var a=rm.fCum-rm.bCum;return{text:pct(a),color:a>=0?"#16A34A":"#DC2626",bold:true};}});
+  if(showFRI)rows.push({label:"FRI Return",fn:function(r,wk){var v=r.wRet[wk]&&r.wRet[wk].fri;return v==null?null:{text:pctDirect(v),color:"#EC4899"};}});
+  if(showSEBI)rows.push({label:"SEBI Benchmark",fn:function(r,wk){var v=r.wRet[wk]&&r.wRet[wk].sebi;return v==null?null:{text:pctDirect(v),color:"#8B5CF6"};}});
+  if(showMF)rows.push({label:"MF Category ("+mfMode+")",fn:function(r,wk){if(!r.curCat)return null;var v=r.wRet[wk]&&r.wRet[wk].mf;return v==null?null:{text:pctDirect(v),color:"#059669"};}});
+  if(showMF&&showQ)rows.push({label:"MF Quartile",fn:function(r,wk){if(!r.curCat)return null;var qd=r.wQ[wk];return qd?{text:qLbl(qd),color:qColor(qd),bold:true}:null;}});
+  rows.push({label:"Sharpe Ratio",fn:function(r,wk){var rm=r.wr[wk];return rm?{text:num(rm.fSh),color:"#0EA5E9"}:null;}});
+  rows.push({label:"Sortino Ratio",fn:function(r,wk){var rm=r.wr[wk];return rm?{text:num(rm.fSo),color:"#10B981"}:null;}});
+  rows.push({label:"Beta vs Comp BM",fn:function(r,wk){var rm=r.wr[wk];return rm?{text:num(rm.beta),color:"#F59E0B"}:null;}});
+  return rows;
 };
-var children=[];
-children.push(renderTbl("Scheme Return",function(s,wk,r){var rm=r.wr[wk];return rm?{text:pct(rm.fCum),style:{color:rm.fCum>=0?"#16A34A":"#DC2626"}}:"—";},"#1F2937"));
-children.push(renderTbl("Composite Benchmark Return",function(s,wk,r){var rm=r.wr[wk];return rm?pct(rm.bCum):"—";},"#EF4444"));
-children.push(renderTbl("Active Return (vs Composite BM)",function(s,wk,r){var rm=r.wr[wk];if(!rm)return"—";var a=rm.fCum-rm.bCum;return{text:pct(a),style:{color:a>=0?"#16A34A":"#DC2626"}};},"#7C3AED"));
-if(showFRI)children.push(renderTbl("FRI Return",function(s,wk,r){return pctDirect(r.wRet[wk]&&r.wRet[wk].fri);},"#EC4899"));
-if(showSEBI)children.push(renderTbl("SEBI Benchmark Return",function(s,wk,r){return pctDirect(r.wRet[wk]&&r.wRet[wk].sebi);},"#8B5CF6"));
-if(showMF)children.push(renderTbl("MF Category Return",function(s,wk,r){return r.curCat&&r.wRet[wk]&&r.wRet[wk].mf!=null?pctDirect(r.wRet[wk].mf):"—";},"#059669","("+mfMode+")"));
-if(showMF&&showQ)children.push(renderTbl("MF Category Quartile Position",function(s,wk,r){if(!r.curCat)return"—";var qd=r.wQ[wk];return qd?{text:qLbl(qd),style:{color:qColor(qd),fontWeight:600}}:"—";},"#7C3AED","Rank • Total • Percentile"));
-children.push(renderTbl("Sharpe Ratio",function(s,wk,r){var rm=r.wr[wk];return rm?num(rm.fSh):"—";},"#0EA5E9"));
-children.push(renderTbl("Sortino Ratio",function(s,wk,r){var rm=r.wr[wk];return rm?num(rm.fSo):"—";},"#10B981"));
-children.push(renderTbl("Beta (vs Composite BM)",function(s,wk,r){var rm=r.wr[wk];return rm?num(rm.beta):"—";},"#F59E0B"));
-return React.createElement(React.Fragment,null,children);
+var metricRows=buildMetrics();
+// Build the table body: for each scheme, render N metric rows, with scheme cell rowSpan'd
+var bodyRows=[];
+stratList.forEach(function(strat,si){
+  var r=allR[strat];
+  var sc=stratColor[r.short]||"#374151";
+  metricRows.forEach(function(mr,mi){
+    var cells=[];
+    if(mi===0){
+      cells.push(React.createElement("td",{key:"scheme",rowSpan:metricRows.length,style:{padding:"10px 14px",fontWeight:700,color:sc,verticalAlign:"middle",fontSize:13,background:"#F9FAFB",borderRight:"2px solid #E5E7EB",borderTop:si>0?"3px solid #1F2937":"none"}},r.short));
+    }
+    var rowStyle={borderBottom:"1px solid #F3F4F6"};
+    if(mi===0&&si>0)rowStyle.borderTop="3px solid #1F2937";
+    cells.push(React.createElement("td",{key:"metric",style:{padding:"6px 12px",fontSize:11,color:"#374151",fontWeight:500,whiteSpace:"nowrap"}},mr.label));
+    winKeys.forEach(function(wk){
+      var c=mr.fn(r,wk);
+      var cellStyle={padding:"6px 12px",textAlign:"right",fontFamily:"monospace",fontSize:12};
+      if(c&&c.color)cellStyle.color=c.color;
+      if(c&&c.bold)cellStyle.fontWeight=600;
+      cells.push(React.createElement("td",{key:wk,style:cellStyle},c?c.text:"—"));
+    });
+    bodyRows.push(React.createElement("tr",{key:strat+"|"+mi,style:rowStyle},cells));
+  });
+});
+return React.createElement("div",{style:{marginTop:8}},
+  React.createElement("div",{style:{overflowX:"auto",background:"white",border:"1px solid #E5E7EB",borderRadius:10}},
+    React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontSize:12}},
+      React.createElement("thead",null,
+        React.createElement("tr",{style:{background:"#F3F4F6",borderBottom:"2px solid #D1D5DB"}},
+          React.createElement("th",{style:{padding:"10px 14px",textAlign:"left",fontWeight:700,color:"#374151",borderRight:"2px solid #E5E7EB",fontSize:12}},"Scheme"),
+          React.createElement("th",{style:{padding:"10px 12px",textAlign:"left",fontWeight:700,color:"#374151",fontSize:12}},"Metric"),
+          winKeys.map(function(wk){return React.createElement("th",{key:wk,style:{padding:"10px 12px",textAlign:"right",fontWeight:700,color:"#374151",fontSize:12}},wk);})
+        )
+      ),
+      React.createElement("tbody",null,bodyRows)
+    )
+  ),
+  showMF&&showQ&&React.createElement("div",{style:{marginTop:8,fontSize:11,color:"#6B7280",padding:"4px 8px"}},"Quartile cell shows: Q<n> • rank/total funds • percentile rank.")
+);
 }(),riskSubTab==="mom"&&function(){return activeStrategies.map(function(strat){var stratPeriods=filteredPeriods.filter(function(p){return p.strategy===strat;});if(!stratPeriods.length)return null;var stratNav=navData.find(function(n){return n.strategy===strat;});if(!stratNav||!stratNav.data.length)return null;var fundReturns=computeDailyReturns(stratNav.data);var eqW=getEquityWeight(strat,filteredPeriods);var bmReturns=computeCompositeBmDailyReturns(niftyTRMap,niftyArbMap,eqW,stratNav.data.slice(1).map(function(d){return d.date;}));// Group by calendar month — keep only latest endDate per YYYY-MM
 var monthLatest={};stratPeriods.forEach(function(p){var mk=p.endDate.slice(0,7);if(!monthLatest[mk]||p.endDate>monthLatest[mk])monthLatest[mk]=p.endDate;});var sortedEnds=Object.keys(monthLatest).sort().map(function(mk){return monthLatest[mk];});var curCat=mfCat[strat];var momRiskData=sortedEnds.map(function(ed,idx){// Use previous month-end as start date for proper MoM returns
 var prevEnd=idx>0?sortedEnds[idx-1]:null;var mk=ed.slice(0,7);var sp=stratPeriods.filter(function(p){return p.endDate.slice(0,7)===mk;}).sort(function(a,b){return a.endDate<b.endDate?1:-1;})[0];var sdStr=prevEnd||sp.startDate;var startD=new Date(sdStr+"T00:00:00");var endD=new Date(ed+"T00:00:00");var rm=computeRiskMetrics(fundReturns,bmReturns,startD,endD);var lbl=endD.toLocaleDateString("en-IN",{month:"short",year:"2-digit"});var friRet=friReturn(niftyTRMap,niftyArbMap,strat,sdStr,ed);var sebiRet=sebiBmReturn(sebiData,strat,sdStr,ed);var mfRet=curCat?mfCatReturn(mfData,curCat,sdStr,ed,mfMode):null;var momQPos=curCat&&rm?mfQuartilePos(mfData,curCat,sdStr,ed,rm.fCum):null;return{label:lbl,endDate:ed,rm:rm,fri:friRet,sebi:sebiRet,mf:mfRet,qPos:momQPos};}).filter(function(d){return d.rm;});var short=strat.replace("IONIC ALLOCATE PORTFOLIO ","");var chartMomData=momRiskData.map(function(d){var row={month:d.label,fund:d.rm.fCum*100,bm:d.rm.bCum*100,active:(d.rm.fCum-d.rm.bCum)*100};if(showFRI&&d.fri!=null)row.fri=d.fri;if(showSEBI&&d.sebi!=null)row.sebi=d.sebi;if(showMF&&d.mf!=null)row.mf=d.mf;return row;});return/*#__PURE__*/React.createElement("div",{key:strat,style:{marginBottom:24}},/*#__PURE__*/React.createElement("h3",{style:{margin:"16px 0 12px",fontSize:16,fontWeight:700,color:"#1E40AF"}},short),chartMomData.length>0&&/*#__PURE__*/React.createElement("div",{style:card},/*#__PURE__*/React.createElement("h4",{style:{margin:"0 0 12px",fontSize:14,fontWeight:600,color:"#374151"}},"Monthly Returns Comparison"),/*#__PURE__*/React.createElement(ResponsiveContainer,{width:"100%",height:280},/*#__PURE__*/React.createElement(ComposedChart,{data:chartMomData,margin:{left:20,right:20,top:10,bottom:5}},/*#__PURE__*/React.createElement(CartesianGrid,{strokeDasharray:"3 3",stroke:"#F3F4F6"}),/*#__PURE__*/React.createElement(XAxis,{dataKey:"month",tick:{fontSize:11}}),/*#__PURE__*/React.createElement(YAxis,{tick:{fontSize:11},tickFormatter:function tickFormatter(v){return v.toFixed(1)+"%";}}),/*#__PURE__*/React.createElement(Tooltip,{formatter:function formatter(v){return[v.toFixed(2)+"%"];}}),/*#__PURE__*/React.createElement(Legend,{wrapperStyle:{fontSize:11}}),/*#__PURE__*/React.createElement(Bar,{dataKey:"fund",name:"Scheme",fill:"#3B82F6"}),/*#__PURE__*/React.createElement(Bar,{dataKey:"bm",name:"Composite BM",fill:"#EF4444"}),showFRI&&/*#__PURE__*/React.createElement(Bar,{dataKey:"fri",name:"FRI",fill:"#EC4899"}),showSEBI&&/*#__PURE__*/React.createElement(Bar,{dataKey:"sebi",name:sebiData[strat]?sebiData[strat].name:"SEBI BM",fill:"#8B5CF6"}),showMF&&curCat&&/*#__PURE__*/React.createElement(Bar,{dataKey:"mf",name:CAT_LABELS[curCat]+" ("+mfMode+")",fill:"#059669"}),/*#__PURE__*/React.createElement(Line,{type:"monotone",dataKey:"active",name:"Active",stroke:"#7C3AED",strokeWidth:2,dot:{r:3}})))),/*#__PURE__*/React.createElement("div",{style:card},/*#__PURE__*/React.createElement("h4",{style:{margin:"0 0 12px",fontSize:14,fontWeight:600,color:"#374151"}},"Monthly Detail"),/*#__PURE__*/React.createElement("div",{style:{overflowX:"auto"}},/*#__PURE__*/React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontSize:11}},/*#__PURE__*/React.createElement("thead",null,/*#__PURE__*/React.createElement("tr",{style:{background:"#F9FAFB",borderBottom:"2px solid #E5E7EB"}},/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"left",fontWeight:600,color:"#6B7280"}},"Month"),/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#3B82F6"}},"Scheme"),/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#EF4444"}},"Comp BM"),showFRI&&/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#EC4899"}},"FRI"),showSEBI&&/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#8B5CF6"}},sebiData[strat]?sebiData[strat].name:"SEBI BM"),showMF&&curCat&&/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#059669"}},CAT_LABELS[curCat]),/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#7C3AED"}},"Active"),/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#6B7280"}},"Sharpe"),/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#6B7280"}},"Sortino"),/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#6B7280"}},"Std Dev"),/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"right",fontWeight:600,color:"#6B7280"}},"Days"),showMF&&showQ&&curCat&&/*#__PURE__*/React.createElement("th",{style:{padding:"6px 10px",textAlign:"center",fontWeight:600,color:"#7C3AED"}},"Quartile"))),/*#__PURE__*/React.createElement("tbody",null,momRiskData.map(function(d,i){return/*#__PURE__*/React.createElement("tr",{key:i,style:{borderBottom:"1px solid #F3F4F6",background:i%2===0?"white":"#FAFBFC"}},/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",fontWeight:500}},d.label),/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",color:"#3B82F6"}},fmtRisk(d.rm.fCum,"pct")),/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",color:"#EF4444"}},fmtRisk(d.rm.bCum,"pct")),showFRI&&/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",color:"#EC4899"}},d.fri!=null?d.fri.toFixed(2)+"%":"—"),showSEBI&&/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",color:"#8B5CF6"}},d.sebi!=null?d.sebi.toFixed(2)+"%":"—"),showMF&&curCat&&/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",color:"#059669"}},d.mf!=null?d.mf.toFixed(2)+"%":"—"),/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",color:"#7C3AED",fontWeight:600}},fmtRisk(d.rm.fCum-d.rm.bCum,"pct")),/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace"}},fmtRisk(d.rm.fSh,"r3")),/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace"}},fmtRisk(d.rm.fSo,"r3")),/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace"}},fmtRisk(d.rm.fSD,"pct")),/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"right",fontFamily:"monospace"}},d.rm.n),showMF&&showQ&&curCat&&/*#__PURE__*/React.createElement("td",{style:{padding:"6px 10px",textAlign:"center"}},d.qPos?/*#__PURE__*/React.createElement("span",{style:{display:"inline-flex",alignItems:"center",gap:4}},/*#__PURE__*/React.createElement("span",{style:{background:{1:"#10B981",2:"#3B82F6",3:"#F59E0B",4:"#EF4444"}[d.qPos.quartile]||"#6B7280",color:"white",fontWeight:700,borderRadius:4,padding:"1px 6px",fontSize:10}},"Q",d.qPos.quartile),/*#__PURE__*/React.createElement("span",{style:{fontSize:9,color:"#6B7280"}},d.qPos.rank,"/",d.qPos.total)):"—"));}))))));});}(),riskSubTab==="custom"&&/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:_objectSpread(_objectSpread({},card),{},{display:"flex",alignItems:"center",gap:12,padding:"12px 20px",flexWrap:"wrap"})},/*#__PURE__*/React.createElement("span",{style:{fontSize:12,fontWeight:600,color:"#6B7280"}},"From:"),/*#__PURE__*/React.createElement("input",{type:"date",value:riskCustomStart,onChange:function onChange(e){return setRiskCustomStart(e.target.value);},style:{border:"1px solid #D1D5DB",borderRadius:6,padding:"6px 10px",fontSize:12}}),/*#__PURE__*/React.createElement("span",{style:{fontSize:12,fontWeight:600,color:"#6B7280"}},"To:"),/*#__PURE__*/React.createElement("input",{type:"date",value:riskCustomEnd,onChange:function onChange(e){return setRiskCustomEnd(e.target.value);},style:{border:"1px solid #D1D5DB",borderRadius:6,padding:"6px 10px",fontSize:12}})),riskCustomStart&&riskCustomEnd&&function(){var sd=new Date(riskCustomStart+"T00:00:00");var ed=new Date(riskCustomEnd+"T00:00:00");if(ed<=sd)return/*#__PURE__*/React.createElement("div",{style:_objectSpread(_objectSpread({},card),{},{color:"#DC2626",fontSize:13,padding:16})},"End date must be after start date.");return activeStrategies.map(function(strat){var stratNav=navData.find(function(n){return n.strategy===strat;});if(!stratNav||!stratNav.data.length)return null;var fundReturns=computeDailyReturns(stratNav.data);var eqW=getEquityWeight(strat,filteredPeriods);var bmReturns=computeCompositeBmDailyReturns(niftyTRMap,niftyArbMap,eqW,stratNav.data.slice(1).map(function(d){return d.date;}));var rm=computeRiskMetrics(fundReturns,bmReturns,sd,ed);var short=strat.replace("IONIC ALLOCATE PORTFOLIO ","");var curCat=mfCat[strat];var sdStr=riskCustomStart;var edStr=riskCustomEnd;var friRet=friReturn(niftyTRMap,niftyArbMap,strat,sdStr,edStr);var sebiRet=sebiBmReturn(sebiData,strat,sdStr,edStr);var mfRet=curCat?mfCatReturn(mfData,curCat,sdStr,edStr,mfMode):null;// Risk vs FRI
