@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-06-03.6 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-06-03.7 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ionic Allocate — Attribution Analysis</title>
   <style>
@@ -252,7 +252,7 @@ function friReturn(niftyTRMap, niftyArbMap, sn, sd, ed) {
 }
 
 // ─── MF Category Return ───
-function mfCatReturn(cat, sd, ed, mode) {
+var _mcrC={};function mfCatReturn(cat, sd, ed, mode){var __k=(cat+"|"+(typeof sd==="string"?sd:sd.toISOString().slice(0,10))+"|"+(typeof ed==="string"?ed:ed.toISOString().slice(0,10))+"|"+mode);if(__k in _mcrC)return _mcrC[__k];var __r=(function(){
   var funds = MF_PARSED[cat];
   if (!funds || !funds.length) return null;
   var rets = [];
@@ -280,7 +280,7 @@ function mfCatReturn(cat, sd, ed, mode) {
     return top.reduce(function(s, r) { return s + r.ret; }, 0) / top.length;
   }
   return null;
-}
+})();_mcrC[__k]=__r;return __r;}
 
 // ─── SEBI Benchmark Daily Returns ───
 function sebiBMDailyReturns(sn, sd, ed) {
@@ -315,7 +315,7 @@ function sebiBMStartEnd(sn, sd, ed) {
 }
 
 // ─── MF Category Average Daily Returns ───
-function mfCatDailyReturns(cat, sd, ed) {
+var _mdrC={};function mfCatDailyReturns(cat, sd, ed){var __k=(cat+"|"+(typeof sd==="string"?sd:sd.toISOString().slice(0,10))+"|"+(typeof ed==="string"?ed:ed.toISOString().slice(0,10))+"|"+(mode||""));if(__k in _mdrC)return _mdrC[__k];var __r=(function(){
   var funds = MF_PARSED[cat];
   if (!funds || !funds.length) return [];
   // Build per-fund daily return maps
@@ -343,7 +343,7 @@ function mfCatDailyReturns(cat, sd, ed) {
     if (cnt > 0) returns.push({ date: d, ret: sum / cnt });
   });
   return returns;
-}
+})();_mdrC[__k]=__r;return __r;}
 
 // ─── MF Category Average Start/End NAV index ───
 function mfCatStartEnd(cat, sd, ed) {
@@ -365,7 +365,7 @@ function mfCatStartEnd(cat, sd, ed) {
 }
 
 // ─── MF Quartile Position ───
-function mfQuartilePos(cat, sd, ed, schemeReturn) {
+var _mqpC={};function mfQuartilePos(cat, sd, ed, schemeReturn){var __k=(cat+"|"+(typeof sd==="string"?sd:sd.toISOString().slice(0,10))+"|"+(typeof ed==="string"?ed:ed.toISOString().slice(0,10))+"|"+schemeReturn);if(__k in _mqpC)return _mqpC[__k];var __r=(function(){
   var funds = MF_PARSED[cat];
   if (!funds || !funds.length) return null;
   var allRets = [];
@@ -392,7 +392,7 @@ function mfQuartilePos(cat, sd, ed, schemeReturn) {
   var percentile = ((total - rank) / (total - 1)) * 100;
   var quartile = percentile >= 75 ? 1 : percentile >= 50 ? 2 : percentile >= 25 ? 3 : 4;
   return { rank: rank, total: total, percentile: percentile, quartile: quartile, allRets: allRets };
-}
+})();_mqpC[__k]=__r;return __r;}
 
 // ─── Quartile Position Badge Component ───
 function QuartilePositionBadge(props) {
