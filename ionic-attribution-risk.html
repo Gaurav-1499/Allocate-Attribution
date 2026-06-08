@@ -3,7 +3,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-06-03.5 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Build: v2026-06-03.6 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IONIC Attribution & Risk Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -482,18 +482,14 @@ var riskCalc = function riskCalc(fr, br, sd, ed) {
     brs = al.map(function (a) {
       return a.b;
     });
-  var fc = ff.reduce(function (a, r) {
-      return a * (1 + r.ret);
+  var fc = frs.reduce(function (a, r) {
+      return a * (1 + r);
     }, 1),
-    bc = bb.reduce(function (a, r) {
-      return a * (1 + r.ret);
+    bc = brs.reduce(function (a, r) {
+      return a * (1 + r);
     }, 1);
-  var _sdR = typeof sd === "string" ? new Date(sd + "T00:00:00") : sd;
-  var _edR = typeof ed === "string" ? new Date(ed + "T00:00:00") : ed;
-  var _calYrs = (_edR - _sdR) / (1000 * 60 * 60 * 24 * 365.25);
-  var _yrs = _calYrs > 0 ? _calYrs : n / TD;
-  var fA = Math.pow(fc, 1 / _yrs) - 1,
-    bA = Math.pow(bc, 1 / _yrs) - 1;
+  var fA = Math.pow(fc, TD / n) - 1,
+    bA = Math.pow(bc, TD / n) - 1;
   var fm = frs.reduce(function (a, b) {
       return a + b;
     }, 0) / n,
