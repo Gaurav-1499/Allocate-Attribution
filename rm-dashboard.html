@@ -391,35 +391,12 @@ function App() {
   }, [analysisDateMode, customAnalysisDate]);
 
   var latestDataDate = useMemo(function() {
-    // Take MIN across NAV last-dates AND benchmark last-dates so the displayed
-    // 'Data as of' reflects the date through which ALL underlying series are available.
-    var navMin = "9999-12-31";
+    var latest = "2000-01-01";
     NAV_DATA.forEach(function(s) {
       var last = s.d[s.d.length - 1][0];
-      if (last < navMin) navMin = last;
+      if (last > latest) latest = last;
     });
-    var benchMin = "9999-12-31";
-    if (typeof NIFTY_TR !== "undefined" && NIFTY_TR.length) {
-      var trLast = NIFTY_TR[NIFTY_TR.length - 1].date;
-      if (trLast < benchMin) benchMin = trLast;
-    }
-    if (typeof NIFTY_ARB !== "undefined" && NIFTY_ARB.length) {
-      var arbLast = NIFTY_ARB[NIFTY_ARB.length - 1].date;
-      if (arbLast < benchMin) benchMin = arbLast;
-    }
-    var sebiMin = "9999-12-31";
-    if (typeof SEBI_BM !== "undefined") {
-      SEBI_BM.forEach(function(s) {
-        if (s.d && s.d.length) {
-          var ld = s.d[s.d.length - 1][0];
-          if (ld < sebiMin) sebiMin = ld;
-        }
-      });
-    }
-    var cutoff = navMin;
-    if (benchMin < cutoff) cutoff = benchMin;
-    if (sebiMin < cutoff) cutoff = sebiMin;
-    return cutoff === "9999-12-31" ? "2000-01-01" : cutoff;
+    return latest;
   }, []);
 
   // Helper: get start date for a time window

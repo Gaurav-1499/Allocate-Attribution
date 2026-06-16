@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-06-03.12 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-06-03.11 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ionic Attribution Dashboard</title>
   <style>
@@ -172,17 +172,7 @@ var strategies=useMemo(function(){return _toConsumableArray(new Set(RAW_DATA.per
 var analysisDate=useMemo(function(){if(analysisDateMode==="custom"&&customAnalysisDate)return customAnalysisDate;var allEndDates=RAW_DATA.periods.map(function(p){return p.endDate;}).sort();return allEndDates.length>0?allEndDates[allEndDates.length-1]:null;},[analysisDateMode,customAnalysisDate]);// Filter periods by analysis date
 var filteredPeriods=useMemo(function(){if(!analysisDate)return RAW_DATA.periods;return RAW_DATA.periods.filter(function(p){return p.endDate<=analysisDate;});},[analysisDate]);var periods=useMemo(function(){return filteredPeriods.filter(function(p){return activeStrategies.includes(p.strategy);}).sort(function(a,b){return a.startDate.localeCompare(b.startDate);});},[activeStrategies,filteredPeriods]);var months=useMemo(function(){// Group by calendar month (YYYY-MM), keep latest endDate per month
 var ml={};periods.forEach(function(p){var mk=p.endDate.slice(0,7);if(!ml[mk]||p.endDate>ml[mk])ml[mk]=p.endDate;});return Object.keys(ml).sort().map(function(mk){return ml[mk];});},[periods]);// Latest data date
-var latestDataDate=useMemo(function(){
-var allEndDates=RAW_DATA.periods.map(function(p){return p.endDate;}).sort();
-if(allEndDates.length===0)return"N/A";
-var cutoff=allEndDates[allEndDates.length-1];
-// Cap to MF availability if MF data ends earlier
-if(typeof MF_LATEST_DATE!=="undefined"&&MF_LATEST_DATE&&MF_LATEST_DATE<cutoff)cutoff=MF_LATEST_DATE;
-// Cap to NIFTY TR/Arb availability
-try{var trArr=RAW_DATA.benchmarks&&RAW_DATA.benchmarks.nifty50tr;if(trArr&&trArr.length){var trLast=trArr[trArr.length-1].date;if(trLast<cutoff)cutoff=trLast;}}catch(e){}
-try{var arbArr=RAW_DATA.benchmarks&&RAW_DATA.benchmarks.nifty50arb;if(arbArr&&arbArr.length){var arbLast=arbArr[arbArr.length-1].date;if(arbLast<cutoff)cutoff=arbLast;}}catch(e){}
-var dt=new Date(cutoff+"T00:00:00");return dt.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
-},[]);// Expanded NAV data
+var latestDataDate=useMemo(function(){var allEndDates=RAW_DATA.periods.map(function(p){return p.endDate;}).sort();if(allEndDates.length===0)return"N/A";var d=allEndDates[allEndDates.length-1];var dt=new Date(d+"T00:00:00");return dt.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});},[]);// Expanded NAV data
 var navData=useMemo(function(){return expandNavData(RAW_NAV);},[]);// SEBI & MF data
 var sebiData=useMemo(function(){return expandSebi(SEBI_RAW);},[]);var mfData=useMemo(function(){return expandMF(MF_RAW);},[]);// Initialize MF category selections
 useMemo(function(){var strats=_toConsumableArray(new Set(RAW_DATA.periods.map(function(p){return p.strategy;}))).sort();var m={};var _iterator11=_createForOfIteratorHelper(strats),_step11;try{for(_iterator11.s();!(_step11=_iterator11.n()).done;){var sn=_step11.value;var cats=SCHEME_CAT_MAP[sn];if(cats&&cats[0])m[sn]=cats[0];}}catch(err){_iterator11.e(err);}finally{_iterator11.f();}if(Object.keys(mfCat).length===0)setMfCat(m);},[]);// Validate custom analysis date
