@@ -3,7 +3,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-06-03.13 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Build: v2026-06-03.14 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IONIC Attribution & Risk Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -2686,6 +2686,12 @@ var RiskScr = function RiskScr(_ref15) {
       type: "checkbox",
       checked: showMF,
       onChange: function onChange(e) {
+        if (e.target.checked && (aDate && MF_LATEST_DATE && (typeof aDate==="object"?aDate.toISOString().slice(0,10):String(aDate)) > MF_LATEST_DATE)) {
+          var _d=new Date(MF_LATEST_DATE+"T00:00:00");
+          var _fmt=_d.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+          alert("MF data not available\n\nMF NAV data is only available till "+_fmt+". Please pick an analysis date on or before that to use the MF Category comparison.");
+          return;
+        }
         return setShowMF(e.target.checked);
       }
     }), " ", /*#__PURE__*/React.createElement("span", {
@@ -2702,11 +2708,17 @@ var RiskScr = function RiskScr(_ref15) {
       }
     }, /*#__PURE__*/React.createElement("input", {
       type: "checkbox",
-      checked: showQ && !(aDate && MF_LATEST_DATE && (typeof aDate==="object"?aDate.toISOString().slice(0,10):String(aDate)) > MF_LATEST_DATE),
+      checked: showQ,
       onChange: function onChange(e) {
+        if (e.target.checked && (aDate && MF_LATEST_DATE && (typeof aDate==="object"?aDate.toISOString().slice(0,10):String(aDate)) > MF_LATEST_DATE)) {
+          var _d=new Date(MF_LATEST_DATE+"T00:00:00");
+          var _fmt=_d.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+          alert("MF data not available\n\nMF NAV data is only available till "+_fmt+". Quartile analysis uses MF peer-set data and cannot be computed for dates beyond that.");
+          return;
+        }
         return setShowQ(e.target.checked);
       },
-      disabled: !showMF || !!(aDate && MF_LATEST_DATE && (typeof aDate==="object"?aDate.toISOString().slice(0,10):String(aDate)) > MF_LATEST_DATE)
+      disabled: !showMF
     }), " ", /*#__PURE__*/React.createElement("span", {
       style: {
         fontWeight: 500,
