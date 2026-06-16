@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-06-03.11 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-06-03.12 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ionic Allocate — Attribution Analysis</title>
   <style>
@@ -997,8 +997,23 @@ function AttributionDashboard() {
   const latestDataDate = useMemo(() => {
     const allEndDates = RAW_DATA.periods.map(p => p.endDate).sort();
     if (allEndDates.length === 0) return "N/A";
-    const d = allEndDates[allEndDates.length - 1];
-    const dt = new Date(d + "T00:00:00");
+    let cutoff = allEndDates[allEndDates.length - 1];
+    // Cap to MF availability if MF data ends earlier
+    if (typeof MF_LATEST_DATE !== "undefined" && MF_LATEST_DATE && MF_LATEST_DATE < cutoff) cutoff = MF_LATEST_DATE;
+    // Cap to Nifty TR/Arb availability
+    try {
+      const trArr = RAW_DATA.benchmarks && RAW_DATA.benchmarks.nifty50tr;
+      if (trArr && trArr.length) {
+        const trLast = trArr[trArr.length - 1].date;
+        if (trLast < cutoff) cutoff = trLast;
+      }
+      const arbArr = RAW_DATA.benchmarks && RAW_DATA.benchmarks.nifty50arb;
+      if (arbArr && arbArr.length) {
+        const arbLast = arbArr[arbArr.length - 1].date;
+        if (arbLast < cutoff) cutoff = arbLast;
+      }
+    } catch(e) {}
+    const dt = new Date(cutoff + "T00:00:00");
     return dt.toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
