@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-07-16.1 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-07-16.2 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ionic Attribution Dashboard</title>
   <style>
@@ -302,14 +302,11 @@ var sebiReturnsD=computeSebiDailyReturns(sebiData,strat,stratNav.data.slice(1).m
 var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRisk=mfDR.length>0?computeRiskMetrics(fundReturns,mfDR,sd,ed):null;var custQuartile=curCat&&rm?mfQuartilePos(mfData,curCat,sd,ed,rm.fCum):null;if(!rm)return/*#__PURE__*/React.createElement("div",{key:strat,style:_objectSpread(_objectSpread({},card),{},{marginBottom:16})},/*#__PURE__*/React.createElement("h3",{style:{margin:"0 0 8px",fontSize:16,fontWeight:700,color:"#1E40AF"}},short),/*#__PURE__*/React.createElement("div",{style:{color:"#9CA3AF",fontSize:13}},"Insufficient data for the selected range (need at least 10 trading days)."));var bmCols=[{label:"Comp BM",m:rm,color:"#EF4444",ret:rm.bCum}];if(showFRI)bmCols.push({label:"FRI",m:friRisk,color:"#EC4899",ret:friRet!=null?friRet/100:null});if(showSEBI)bmCols.push({label:sebiData[strat]?sebiData[strat].name:"SEBI BM",m:sebiRisk,color:"#8B5CF6",ret:sebiRet!=null?sebiRet/100:null});if(showMF&&curCat)bmCols.push({label:CAT_LABELS[curCat]+" ("+mfMode+")",m:mfRisk,color:"#059669",ret:mfRet!=null?mfRet/100:null});return/*#__PURE__*/React.createElement("div",{key:strat,style:{marginBottom:24}},/*#__PURE__*/React.createElement("h3",{style:{margin:"16px 0 12px",fontSize:16,fontWeight:700,color:"#1E40AF"}},short),/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}},/*#__PURE__*/React.createElement("div",{style:_objectSpread(_objectSpread({},card),{},{textAlign:"center",flex:"1 1 120px"})},/*#__PURE__*/React.createElement("div",{style:{fontSize:11,color:"#6B7280",fontWeight:600,textTransform:"uppercase",letterSpacing:1}},"Scheme Return"),/*#__PURE__*/React.createElement("div",{style:{fontSize:24,fontWeight:700,color:"#3B82F6",fontFamily:"monospace",marginTop:6}},fmtRisk(rm.fCum,"pct"))),bmCols.map(function(bc,bi){return/*#__PURE__*/React.createElement("div",{key:bi,style:_objectSpread(_objectSpread({},card),{},{textAlign:"center",flex:"1 1 120px"})},/*#__PURE__*/React.createElement("div",{style:{fontSize:11,color:"#6B7280",fontWeight:600,textTransform:"uppercase",letterSpacing:1}},bc.label),/*#__PURE__*/React.createElement("div",{style:{fontSize:24,fontWeight:700,color:bc.color,fontFamily:"monospace",marginTop:6}},bc.ret!=null?fmtRisk(bc.ret,"pct"):"—"));}),/*#__PURE__*/React.createElement("div",{style:_objectSpread(_objectSpread({},card),{},{textAlign:"center",flex:"1 1 120px"})},/*#__PURE__*/React.createElement("div",{style:{fontSize:11,color:"#6B7280",fontWeight:600,textTransform:"uppercase",letterSpacing:1}},"Active (vs Comp BM)"),/*#__PURE__*/React.createElement("div",{style:{fontSize:24,fontWeight:700,color:"#7C3AED",fontFamily:"monospace",marginTop:6}},fmtRisk(rm.fCum-rm.bCum,"pct")))),showMF&&showQ&&curCat&&custQuartile&&/*#__PURE__*/React.createElement("div",{style:{background:"white",border:"1px solid #E5E7EB",borderRadius:10,padding:16,marginBottom:16}},/*#__PURE__*/React.createElement("h4",{style:{margin:"0 0 8px",fontSize:14,fontWeight:600,color:"#374151"}},"MF Category Quartile Position \u2014 ",CAT_LABELS[curCat]),/*#__PURE__*/React.createElement(QBadge,{qData:custQuartile,schemeName:short})),/*#__PURE__*/React.createElement("div",{style:card},/*#__PURE__*/React.createElement("h4",{style:{margin:"0 0 12px",fontSize:14,fontWeight:600,color:"#374151"}},"Full Risk Metrics"),/*#__PURE__*/React.createElement("div",{style:{overflowX:"auto"}},/*#__PURE__*/React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontSize:12}},/*#__PURE__*/React.createElement("thead",null,/*#__PURE__*/React.createElement("tr",{style:{background:"#F9FAFB",borderBottom:"2px solid #E5E7EB"}},/*#__PURE__*/React.createElement("th",{style:{padding:"7px 12px",textAlign:"left",fontWeight:600,color:"#6B7280"}},"Metric"),/*#__PURE__*/React.createElement("th",{style:{padding:"7px 12px",textAlign:"right",fontWeight:600,color:"#3B82F6"}},"Fund"),bmCols.map(function(bc,bi){return/*#__PURE__*/React.createElement("th",{key:bi,style:{padding:"7px 12px",textAlign:"right",fontWeight:600,color:bc.color}},bc.label);}))),/*#__PURE__*/React.createElement("tbody",null,[["Annualized Return","fRet","bRet","pct"],["Cumulative Return","fCum","bCum","pct"],["Sharpe Ratio","fSh","bSh","r3"],["Sortino Ratio","fSo","bSo","r3"],["Treynor Ratio","fTr","bTr","r3"],["Beta","beta",null,"r4"],["Std Deviation (Ann.)","fSD","bSD","pct"],["Downside Deviation (Ann.)","fDD","bDD","pct"],["Trading Days","n","n","n"]].map(function(_ref54,i){var _ref55=_slicedToArray(_ref54,4),label=_ref55[0],fk=_ref55[1],bk=_ref55[2],t=_ref55[3];return/*#__PURE__*/React.createElement("tr",{key:i,style:{borderBottom:"1px solid #F3F4F6",background:i%2===0?"white":"#FAFBFC"}},/*#__PURE__*/React.createElement("td",{style:{padding:"7px 12px",fontWeight:500}},label),/*#__PURE__*/React.createElement("td",{style:{padding:"7px 12px",textAlign:"right",fontFamily:"monospace",color:"#3B82F6"}},fmtRisk(rm[fk],t)),bmCols.map(function(bc,bi){var bm=bc.m;var bv=bk===null?bm?bm.beta:null:bm?bm[bk]:null;return/*#__PURE__*/React.createElement("td",{key:bi,style:{padding:"7px 12px",textAlign:"right",fontFamily:"monospace",color:bc.color}},bv!=null?fmtRisk(bv,t):"—");}));}))))));});}())),errorModal&&/*#__PURE__*/React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}},/*#__PURE__*/React.createElement("div",{style:{background:"white",borderRadius:12,padding:24,maxWidth:480,width:"90%",boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}},/*#__PURE__*/React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},/*#__PURE__*/React.createElement("span",{style:{fontSize:20}},"\u26A0\uFE0F"),/*#__PURE__*/React.createElement("span",{style:{fontSize:16,fontWeight:600,color:"#DC2626"}},"Data Not Available")),/*#__PURE__*/React.createElement("p",{style:{fontSize:13,color:"#374151",marginBottom:12}},errorModal.msg),errorModal.sugg&&errorModal.sugg.length>0&&/*#__PURE__*/React.createElement("div",{style:{background:"#F0FDF4",borderRadius:8,padding:12,marginBottom:16}},/*#__PURE__*/React.createElement("div",{style:{fontSize:12,fontWeight:600,color:"#166534",marginBottom:6}},"Nearest available dates:"),errorModal.sugg.map(function(s,i){return/*#__PURE__*/React.createElement("div",{key:i,style:{fontSize:12,color:"#166534"}},"\u2022 ",s);})),/*#__PURE__*/React.createElement("button",{onClick:function onClick(){return setErrorModal(null);},style:{background:"#3B82F6",color:"white",border:"none",borderRadius:6,padding:"8px 20px",fontSize:13,cursor:"pointer"}},"OK"))),/*#__PURE__*/React.createElement("div",{style:{borderTop:"1px solid #E5E7EB",background:"#F9FAFB",padding:"16px 24px",fontSize:11,color:"#6B7280",lineHeight:1.8}},/*#__PURE__*/React.createElement("div",{style:{maxWidth:1400,margin:"0 auto"}},/*#__PURE__*/React.createElement("div",{style:{fontWeight:700,color:"#374151",marginBottom:4,fontSize:12}},"Benchmark Reference"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"Composite BM (attribution):")," Equity weight \xD7 Nifty 50 TRI + (1 - Equity weight) \xD7 Nifty 50 Arbitrage Index (equity weight derived from actual allocation)"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"FRI (Fee Reference Index):")," Aggressive = 80% Nifty 50 TRI + 20% Nifty 50 Arb \xA0|\xA0 Moderate = 50% Nifty 50 TRI + 50% Nifty 50 Arb \xA0|\xA0 Equity = 100% Nifty 50 TRI"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"SEBI Benchmarks:")," Moderate \u2192 Nifty 50 Hybrid \xA0|\xA0 Aggressive \u2192 NSE Multi Asset Index \xA0|\xA0 Equity \u2192 Nifty 50 TRI"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"MF Category Comparison:")," Moderate \u2192 BAF/Agg Hybrid \xA0|\xA0 Aggressive \u2192 MAF/Agg Hybrid \xA0|\xA0 Equity \u2192 Flexi Cap/Agg Hybrid"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"Benchmark contribution formula:")," Average Weight (%) \xD7 Benchmark Return (%) / 100"))));}ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AttributionDashboard));</script>
 
 <!-- ═══ IONIC DOWNLOAD FEATURE (Excel + PDF) — injected v2026-07-16 ═══ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx-js-style/1.2.0/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
 (function(){
-  var BLUE_RGB = 'rgb(59, 130, 246)';
-  var BLUE_HEX = '#3b82f6';
-
   function isActiveBtn(b){
     var bg = (b.style && b.style.background || '').toLowerCase();
     return bg.indexOf('rgb(59') !== -1 || bg.indexOf('#3b82f6') !== -1;
@@ -319,11 +316,24 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
     return bd.indexOf('rgb(59') !== -1 || bd.indexOf('#3b82f6') !== -1;
   }
 
+  // Parse a formatted number like "12.34%", "-3.45", "0.28%", "(4.56)" → Number or null
+  function parseNumeric(s){
+    if (s === null || s === undefined) return null;
+    s = String(s).trim();
+    if (!s || s === '—' || s === '-' || s === 'N/A') return null;
+    var neg = false;
+    if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1,-1); }
+    var m = s.match(/^-?\s*[\d,]+(?:\.\d+)?/);
+    if (!m) return null;
+    var v = parseFloat(m[0].replace(/,/g,''));
+    if (isNaN(v)) return null;
+    return neg ? -v : v;
+  }
+
   function getContext(){
     var ctx = { scheme:'All Strategies', period:'', dataAsOf:'', tab:'', drill:'', extras:[] };
     var buttons = document.querySelectorAll('button');
 
-    // Data-as-of badge
     var spans = document.querySelectorAll('span');
     for (var i=0;i<spans.length;i++){
       var t = spans[i].textContent || '';
@@ -333,14 +343,12 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
       }
     }
 
-    // Tab
     var tabLabels = ['Month-on-Month','Custom Date Range','Time Windows','Scheme Returns & Risk'];
     for (var i=0;i<buttons.length;i++){
       var lbl = (buttons[i].textContent||'').trim();
       if (tabLabels.indexOf(lbl) !== -1 && isActiveBtn(buttons[i])){ ctx.tab = lbl; break; }
     }
 
-    // Strategies (pills MODERATE / AGGRESSIVE / EQUITY)
     var strategyLabels = ['MODERATE','AGGRESSIVE','EQUITY'];
     var picked = [];
     for (var i=0;i<buttons.length;i++){
@@ -352,14 +360,12 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
     if (picked.length === 3) ctx.scheme = 'All Strategies (Moderate + Aggressive + Equity)';
     else if (picked.length) ctx.scheme = picked.join(' + ');
 
-    // Drill (Asset Class / Category / Instrument)
     var drillLabels = ['Asset Class','Category','Instrument'];
     for (var i=0;i<buttons.length;i++){
       var lbl = (buttons[i].textContent||'').trim();
       if (drillLabels.indexOf(lbl) !== -1 && isActiveBtn(buttons[i])){ ctx.drill = lbl; break; }
     }
 
-    // Period per tab
     if (ctx.tab === 'Custom Date Range'){
       var dates = document.querySelectorAll('input[type="date"]');
       if (dates.length >= 2) ctx.period = (dates[0].value||'?') + ' to ' + (dates[1].value||'?');
@@ -370,7 +376,6 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
         if (winLabels.indexOf(lbl) !== -1 && isActiveBtn(buttons[i])){ ctx.period = 'Trailing ' + lbl; break; }
       }
     } else {
-      // MoM or Risk: use header sub-text ("Apr 2025 — Jun 2026 · X months …")
       var h1 = document.querySelector('h1');
       if (h1 && h1.parentElement){
         var t = h1.parentElement.textContent || '';
@@ -380,7 +385,6 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
     }
     if (!ctx.period) ctx.period = 'As displayed';
 
-    // Scheme Returns & Risk view (Time Windows / Month-on-Month / Custom Range)
     if (ctx.tab === 'Scheme Returns & Risk'){
       var riskViews = ['Time Windows','Month-on-Month','Custom Range'];
       for (var i=0;i<buttons.length;i++){
@@ -398,7 +402,6 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
     var tables = root.querySelectorAll('table');
     var out = [];
     tables.forEach(function(tbl, idx){
-      // Skip tables inside the header/nav strip
       var top = tbl.getBoundingClientRect().top + window.scrollY;
       if (top < 100) return;
       var rows = tbl.querySelectorAll('tr');
@@ -414,7 +417,6 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
         if (row.length) data.push(row);
       });
       if (data.length < 2) return;
-      // Find nearest h3 title above
       var title = 'Table ' + (idx+1);
       var el = tbl.parentElement;
       for (var d=0; d<6 && el; d++){
@@ -431,14 +433,73 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
     return (n||'Sheet').replace(/[\\/?*\[\]:]/g,'').slice(0,28) || 'Sheet';
   }
 
+  // ─── STYLE HELPERS ───
+  var GREEN = '10B981';       // positive
+  var RED   = 'DC2626';       // negative
+  var HDR_BG = '1E3A8A';      // navy header
+  var HDR_FG = 'FFFFFF';
+  var LIGHT_BG = 'EFF6FF';    // light blue for cover header rows
+  var ROW_ALT_BG = 'F8FAFC';
+
+  function styleFor(val, opts){
+    opts = opts || {};
+    var s = { alignment: { vertical:'center' }, font: { name:'Calibri', sz: 10 } };
+    // Numeric cells: colour by sign
+    var num = parseNumeric(val);
+    if (num !== null && opts.numeric){
+      s.font.color = { rgb: num > 0 ? GREEN : (num < 0 ? RED : '374151') };
+      s.font.bold = true;
+      s.alignment.horizontal = 'right';
+    } else if (opts.header){
+      s.font = { name:'Calibri', sz: 10, bold:true, color:{rgb:HDR_FG} };
+      s.fill = { patternType:'solid', fgColor:{rgb:HDR_BG} };
+      s.alignment = { vertical:'center', horizontal:'center', wrapText:true };
+      s.border = { top:{style:'thin',color:{rgb:'FFFFFF'}}, bottom:{style:'thin',color:{rgb:'FFFFFF'}} };
+    } else if (opts.metaLabel){
+      s.font = { name:'Calibri', sz: 10, bold:true, color:{rgb:'374151'} };
+      s.fill = { patternType:'solid', fgColor:{rgb:LIGHT_BG} };
+    } else if (opts.metaValue){
+      s.font = { name:'Calibri', sz: 10, color:{rgb:'111827'} };
+      s.fill = { patternType:'solid', fgColor:{rgb:LIGHT_BG} };
+    } else if (opts.altRow){
+      s.fill = { patternType:'solid', fgColor:{rgb:ROW_ALT_BG} };
+    }
+    if (opts.border){
+      s.border = s.border || {};
+      s.border.top = s.border.top || {style:'thin', color:{rgb:'E5E7EB'}};
+      s.border.bottom = s.border.bottom || {style:'thin', color:{rgb:'E5E7EB'}};
+      s.border.left = s.border.left || {style:'thin', color:{rgb:'E5E7EB'}};
+      s.border.right = s.border.right || {style:'thin', color:{rgb:'E5E7EB'}};
+    }
+    return s;
+  }
+
+  // Detect if a column looks numeric (has any parseable numbers in its data cells)
+  function detectNumericCols(data){
+    if (data.length < 2) return {};
+    var out = {};
+    var hdr = data[0];
+    for (var j=0; j<hdr.length; j++){
+      var hits = 0, total = 0;
+      for (var i=1; i<data.length; i++){
+        var v = (data[i]||[])[j];
+        if (v === undefined || v === null || v === '') continue;
+        total++;
+        if (parseNumeric(v) !== null) hits++;
+      }
+      out[j] = total > 0 && (hits/total) > 0.5;
+    }
+    return out;
+  }
+
   function downloadExcel(){
     if (!window.XLSX){ alert('Excel library still loading. Try again in a moment.'); return; }
     var ctx = getContext();
     var tables = extractTables();
     var wb = XLSX.utils.book_new();
 
-    // Cover sheet
-    var cover = [
+    // ── Cover sheet ──
+    var coverRows = [
       ['Ionic Allocate — Attribution Analysis'],
       [''],
       ['Scheme', ctx.scheme],
@@ -448,13 +509,23 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
       ['Data as of', ctx.dataAsOf],
       ['Generated', new Date().toLocaleString()],
     ];
-    if (ctx.extras.length) ctx.extras.forEach(function(x){ cover.push([x]); });
-    var wsCover = XLSX.utils.aoa_to_sheet(cover);
-    wsCover['!cols'] = [{wch:16},{wch:60}];
-    // Bold title row (best-effort)
-    if (wsCover['A1']) wsCover['A1'].s = { font: { bold: true, sz: 14 } };
+    if (ctx.extras.length) ctx.extras.forEach(function(x){ coverRows.push([x]); });
+
+    var wsCover = XLSX.utils.aoa_to_sheet(coverRows);
+    wsCover['!cols'] = [{wch:18},{wch:60}];
+    wsCover['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:1} }];
+    // Title cell
+    if (wsCover['A1']) wsCover['A1'].s = { font:{name:'Calibri', sz:16, bold:true, color:{rgb:'FFFFFF'}}, fill:{patternType:'solid', fgColor:{rgb:HDR_BG}}, alignment:{horizontal:'center', vertical:'center'} };
+    // Meta rows
+    for (var r=2; r<coverRows.length; r++){
+      var lbl = 'A'+(r+1), val = 'B'+(r+1);
+      if (wsCover[lbl]) wsCover[lbl].s = styleFor(coverRows[r][0], {metaLabel:true});
+      if (wsCover[val]) wsCover[val].s = styleFor(coverRows[r][1], {metaValue:true});
+    }
+    wsCover['!rows'] = [{hpt: 28}];
     XLSX.utils.book_append_sheet(wb, wsCover, 'Cover');
 
+    // ── One sheet per table ──
     var used = { 'Cover': 1 };
     tables.forEach(function(t, i){
       var name = safeSheetName(t.title);
@@ -462,7 +533,7 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
       while (used[name]) { c++; name = (base.slice(0, 25)) + '_' + c; }
       used[name] = 1;
 
-      var aoa = [
+      var meta = [
         ['Scheme:', ctx.scheme],
         ['Period:', ctx.period],
         ['View:', ctx.tab],
@@ -470,15 +541,69 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
         ['Table:', t.title],
         ['Data as of:', ctx.dataAsOf],
         [''],
-      ].concat(t.data);
+      ];
+      var aoa = meta.concat(t.data);
       var ws = XLSX.utils.aoa_to_sheet(aoa);
+
       // Column widths
       var widths = [];
       aoa.forEach(function(r){ r.forEach(function(v, j){
         var l = (v||'').toString().length;
         if (l > (widths[j]||0)) widths[j] = l;
       }); });
-      ws['!cols'] = widths.map(function(w){ return { wch: Math.min(35, Math.max(10, w+2)) }; });
+      ws['!cols'] = widths.map(function(w){ return { wch: Math.min(38, Math.max(10, w+2)) }; });
+
+      // Merge cells in meta rows to span all data columns for cleaner look
+      var ncols = Math.max.apply(null, aoa.map(function(r){return r.length;}));
+      ws['!merges'] = [];
+      for (var mr=0; mr<meta.length-1; mr++){
+        ws['!merges'].push({ s:{r:mr,c:1}, e:{r:mr,c:ncols-1} });
+      }
+
+      // Style meta rows
+      for (var mr=0; mr<meta.length-1; mr++){
+        var lblAddr = XLSX.utils.encode_cell({r:mr,c:0});
+        var valAddr = XLSX.utils.encode_cell({r:mr,c:1});
+        if (ws[lblAddr]) ws[lblAddr].s = styleFor(meta[mr][0], {metaLabel:true});
+        if (ws[valAddr]) ws[valAddr].s = styleFor(meta[mr][1], {metaValue:true});
+      }
+
+      // Detect numeric columns from the table body
+      var numericCols = detectNumericCols(t.data);
+      var headerRowIdx = meta.length; // in aoa
+
+      // Style header row
+      for (var j=0; j<t.data[0].length; j++){
+        var addr = XLSX.utils.encode_cell({r:headerRowIdx, c:j});
+        if (ws[addr]) ws[addr].s = styleFor(t.data[0][j], {header:true, border:true});
+      }
+      // Style body rows
+      for (var i2=1; i2<t.data.length; i2++){
+        var isAlt = (i2 % 2 === 0);
+        for (var j=0; j<t.data[i2].length; j++){
+          var addr = XLSX.utils.encode_cell({r: headerRowIdx + i2, c: j});
+          if (!ws[addr]) continue;
+          var val = t.data[i2][j];
+          var num = parseNumeric(val);
+          // If this column is numeric, replace the string with an actual number for Excel
+          if (numericCols[j] && num !== null){
+            ws[addr].v = num;
+            ws[addr].t = 'n';
+            // Preserve % format if original had it
+            if (String(val).indexOf('%') !== -1){
+              ws[addr].z = '0.00"%"';
+            } else {
+              ws[addr].z = '#,##0.00';
+            }
+          }
+          ws[addr].s = styleFor(val, { numeric: numericCols[j], altRow: isAlt, border:true });
+        }
+      }
+
+      // Header row height
+      ws['!rows'] = ws['!rows'] || [];
+      ws['!rows'][headerRowIdx] = { hpt: 24 };
+
       XLSX.utils.book_append_sheet(wb, ws, name);
     });
 
@@ -497,8 +622,7 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
     var pageW = doc.internal.pageSize.getWidth();
     var pageH = doc.internal.pageSize.getHeight();
 
-    // Cover header
-    doc.setFillColor(15, 23, 42); // slate-900
+    doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, pageW, 60, 'F');
     doc.setTextColor(255,255,255);
     doc.setFontSize(18); doc.setFont(undefined,'bold');
@@ -529,20 +653,33 @@ var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRi
       doc.text(t.title, 40, startY);
       var header = t.data.length ? t.data[0] : [];
       var body = t.data.slice(1);
+      var numericCols = detectNumericCols(t.data);
       doc.autoTable({
         head: [header],
         body: body,
         startY: startY + 8,
         margin: {left:40, right:40},
         styles: { fontSize: 7, cellPadding: 3, overflow:'linebreak' },
-        headStyles: { fillColor: [30,58,138], textColor:255, fontStyle:'bold' },
+        headStyles: { fillColor: [30,58,138], textColor:255, fontStyle:'bold', halign:'center' },
         alternateRowStyles: { fillColor: [248,250,252] },
         theme: 'grid',
+        didParseCell: function(hook){
+          if (hook.section !== 'body') return;
+          var colIdx = hook.column.index;
+          if (!numericCols[colIdx]) return;
+          var raw = hook.cell.raw;
+          var num = parseNumeric(raw);
+          if (num === null) return;
+          hook.cell.styles.halign = 'right';
+          hook.cell.styles.fontStyle = 'bold';
+          if (num > 0)      hook.cell.styles.textColor = [16, 163, 74];   // green
+          else if (num < 0) hook.cell.styles.textColor = [220, 38, 38];   // red
+          else              hook.cell.styles.textColor = [55, 65, 81];
+        }
       });
       startY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : startY+80) + 26;
     });
 
-    // Footer page numbers
     var pages = doc.internal.getNumberOfPages();
     for (var p=1; p<=pages; p++){
       doc.setPage(p);
