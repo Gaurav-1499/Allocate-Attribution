@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-07-07.1 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-07-16.1 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ionic Attribution Dashboard</title>
   <style>
@@ -300,5 +300,302 @@ var prevEnd=idx>0?sortedEnds[idx-1]:null;var mk=ed.slice(0,7);var sp=stratPeriod
 var friReturnsD=computeFriDailyReturns(niftyTRMap,niftyArbMap,strat,stratNav.data.slice(1).map(function(d){return d.date;}));var friRisk=computeRiskMetrics(fundReturns,friReturnsD,sd,ed);// Risk vs SEBI
 var sebiReturnsD=computeSebiDailyReturns(sebiData,strat,stratNav.data.slice(1).map(function(d){return d.date;}));var sebiRisk=computeRiskMetrics(fundReturns,sebiReturnsD,sd,ed);// Risk vs MF
 var mfDR=curCat?computeMfCatDailyReturns(mfData,curCat,sd,ed,mfMode):[];var mfRisk=mfDR.length>0?computeRiskMetrics(fundReturns,mfDR,sd,ed):null;var custQuartile=curCat&&rm?mfQuartilePos(mfData,curCat,sd,ed,rm.fCum):null;if(!rm)return/*#__PURE__*/React.createElement("div",{key:strat,style:_objectSpread(_objectSpread({},card),{},{marginBottom:16})},/*#__PURE__*/React.createElement("h3",{style:{margin:"0 0 8px",fontSize:16,fontWeight:700,color:"#1E40AF"}},short),/*#__PURE__*/React.createElement("div",{style:{color:"#9CA3AF",fontSize:13}},"Insufficient data for the selected range (need at least 10 trading days)."));var bmCols=[{label:"Comp BM",m:rm,color:"#EF4444",ret:rm.bCum}];if(showFRI)bmCols.push({label:"FRI",m:friRisk,color:"#EC4899",ret:friRet!=null?friRet/100:null});if(showSEBI)bmCols.push({label:sebiData[strat]?sebiData[strat].name:"SEBI BM",m:sebiRisk,color:"#8B5CF6",ret:sebiRet!=null?sebiRet/100:null});if(showMF&&curCat)bmCols.push({label:CAT_LABELS[curCat]+" ("+mfMode+")",m:mfRisk,color:"#059669",ret:mfRet!=null?mfRet/100:null});return/*#__PURE__*/React.createElement("div",{key:strat,style:{marginBottom:24}},/*#__PURE__*/React.createElement("h3",{style:{margin:"16px 0 12px",fontSize:16,fontWeight:700,color:"#1E40AF"}},short),/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}},/*#__PURE__*/React.createElement("div",{style:_objectSpread(_objectSpread({},card),{},{textAlign:"center",flex:"1 1 120px"})},/*#__PURE__*/React.createElement("div",{style:{fontSize:11,color:"#6B7280",fontWeight:600,textTransform:"uppercase",letterSpacing:1}},"Scheme Return"),/*#__PURE__*/React.createElement("div",{style:{fontSize:24,fontWeight:700,color:"#3B82F6",fontFamily:"monospace",marginTop:6}},fmtRisk(rm.fCum,"pct"))),bmCols.map(function(bc,bi){return/*#__PURE__*/React.createElement("div",{key:bi,style:_objectSpread(_objectSpread({},card),{},{textAlign:"center",flex:"1 1 120px"})},/*#__PURE__*/React.createElement("div",{style:{fontSize:11,color:"#6B7280",fontWeight:600,textTransform:"uppercase",letterSpacing:1}},bc.label),/*#__PURE__*/React.createElement("div",{style:{fontSize:24,fontWeight:700,color:bc.color,fontFamily:"monospace",marginTop:6}},bc.ret!=null?fmtRisk(bc.ret,"pct"):"—"));}),/*#__PURE__*/React.createElement("div",{style:_objectSpread(_objectSpread({},card),{},{textAlign:"center",flex:"1 1 120px"})},/*#__PURE__*/React.createElement("div",{style:{fontSize:11,color:"#6B7280",fontWeight:600,textTransform:"uppercase",letterSpacing:1}},"Active (vs Comp BM)"),/*#__PURE__*/React.createElement("div",{style:{fontSize:24,fontWeight:700,color:"#7C3AED",fontFamily:"monospace",marginTop:6}},fmtRisk(rm.fCum-rm.bCum,"pct")))),showMF&&showQ&&curCat&&custQuartile&&/*#__PURE__*/React.createElement("div",{style:{background:"white",border:"1px solid #E5E7EB",borderRadius:10,padding:16,marginBottom:16}},/*#__PURE__*/React.createElement("h4",{style:{margin:"0 0 8px",fontSize:14,fontWeight:600,color:"#374151"}},"MF Category Quartile Position \u2014 ",CAT_LABELS[curCat]),/*#__PURE__*/React.createElement(QBadge,{qData:custQuartile,schemeName:short})),/*#__PURE__*/React.createElement("div",{style:card},/*#__PURE__*/React.createElement("h4",{style:{margin:"0 0 12px",fontSize:14,fontWeight:600,color:"#374151"}},"Full Risk Metrics"),/*#__PURE__*/React.createElement("div",{style:{overflowX:"auto"}},/*#__PURE__*/React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontSize:12}},/*#__PURE__*/React.createElement("thead",null,/*#__PURE__*/React.createElement("tr",{style:{background:"#F9FAFB",borderBottom:"2px solid #E5E7EB"}},/*#__PURE__*/React.createElement("th",{style:{padding:"7px 12px",textAlign:"left",fontWeight:600,color:"#6B7280"}},"Metric"),/*#__PURE__*/React.createElement("th",{style:{padding:"7px 12px",textAlign:"right",fontWeight:600,color:"#3B82F6"}},"Fund"),bmCols.map(function(bc,bi){return/*#__PURE__*/React.createElement("th",{key:bi,style:{padding:"7px 12px",textAlign:"right",fontWeight:600,color:bc.color}},bc.label);}))),/*#__PURE__*/React.createElement("tbody",null,[["Annualized Return","fRet","bRet","pct"],["Cumulative Return","fCum","bCum","pct"],["Sharpe Ratio","fSh","bSh","r3"],["Sortino Ratio","fSo","bSo","r3"],["Treynor Ratio","fTr","bTr","r3"],["Beta","beta",null,"r4"],["Std Deviation (Ann.)","fSD","bSD","pct"],["Downside Deviation (Ann.)","fDD","bDD","pct"],["Trading Days","n","n","n"]].map(function(_ref54,i){var _ref55=_slicedToArray(_ref54,4),label=_ref55[0],fk=_ref55[1],bk=_ref55[2],t=_ref55[3];return/*#__PURE__*/React.createElement("tr",{key:i,style:{borderBottom:"1px solid #F3F4F6",background:i%2===0?"white":"#FAFBFC"}},/*#__PURE__*/React.createElement("td",{style:{padding:"7px 12px",fontWeight:500}},label),/*#__PURE__*/React.createElement("td",{style:{padding:"7px 12px",textAlign:"right",fontFamily:"monospace",color:"#3B82F6"}},fmtRisk(rm[fk],t)),bmCols.map(function(bc,bi){var bm=bc.m;var bv=bk===null?bm?bm.beta:null:bm?bm[bk]:null;return/*#__PURE__*/React.createElement("td",{key:bi,style:{padding:"7px 12px",textAlign:"right",fontFamily:"monospace",color:bc.color}},bv!=null?fmtRisk(bv,t):"—");}));}))))));});}())),errorModal&&/*#__PURE__*/React.createElement("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}},/*#__PURE__*/React.createElement("div",{style:{background:"white",borderRadius:12,padding:24,maxWidth:480,width:"90%",boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}},/*#__PURE__*/React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},/*#__PURE__*/React.createElement("span",{style:{fontSize:20}},"\u26A0\uFE0F"),/*#__PURE__*/React.createElement("span",{style:{fontSize:16,fontWeight:600,color:"#DC2626"}},"Data Not Available")),/*#__PURE__*/React.createElement("p",{style:{fontSize:13,color:"#374151",marginBottom:12}},errorModal.msg),errorModal.sugg&&errorModal.sugg.length>0&&/*#__PURE__*/React.createElement("div",{style:{background:"#F0FDF4",borderRadius:8,padding:12,marginBottom:16}},/*#__PURE__*/React.createElement("div",{style:{fontSize:12,fontWeight:600,color:"#166534",marginBottom:6}},"Nearest available dates:"),errorModal.sugg.map(function(s,i){return/*#__PURE__*/React.createElement("div",{key:i,style:{fontSize:12,color:"#166534"}},"\u2022 ",s);})),/*#__PURE__*/React.createElement("button",{onClick:function onClick(){return setErrorModal(null);},style:{background:"#3B82F6",color:"white",border:"none",borderRadius:6,padding:"8px 20px",fontSize:13,cursor:"pointer"}},"OK"))),/*#__PURE__*/React.createElement("div",{style:{borderTop:"1px solid #E5E7EB",background:"#F9FAFB",padding:"16px 24px",fontSize:11,color:"#6B7280",lineHeight:1.8}},/*#__PURE__*/React.createElement("div",{style:{maxWidth:1400,margin:"0 auto"}},/*#__PURE__*/React.createElement("div",{style:{fontWeight:700,color:"#374151",marginBottom:4,fontSize:12}},"Benchmark Reference"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"Composite BM (attribution):")," Equity weight \xD7 Nifty 50 TRI + (1 - Equity weight) \xD7 Nifty 50 Arbitrage Index (equity weight derived from actual allocation)"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"FRI (Fee Reference Index):")," Aggressive = 80% Nifty 50 TRI + 20% Nifty 50 Arb \xA0|\xA0 Moderate = 50% Nifty 50 TRI + 50% Nifty 50 Arb \xA0|\xA0 Equity = 100% Nifty 50 TRI"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"SEBI Benchmarks:")," Moderate \u2192 Nifty 50 Hybrid \xA0|\xA0 Aggressive \u2192 NSE Multi Asset Index \xA0|\xA0 Equity \u2192 Nifty 50 TRI"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"MF Category Comparison:")," Moderate \u2192 BAF/Agg Hybrid \xA0|\xA0 Aggressive \u2192 MAF/Agg Hybrid \xA0|\xA0 Equity \u2192 Flexi Cap/Agg Hybrid"),/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("span",{style:{fontWeight:600,color:"#374151"}},"Benchmark contribution formula:")," Average Weight (%) \xD7 Benchmark Return (%) / 100"))));}ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AttributionDashboard));</script>
+
+<!-- ═══ IONIC DOWNLOAD FEATURE (Excel + PDF) — injected v2026-07-16 ═══ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+  var BLUE_RGB = 'rgb(59, 130, 246)';
+  var BLUE_HEX = '#3b82f6';
+
+  function isActiveBtn(b){
+    var bg = (b.style && b.style.background || '').toLowerCase();
+    return bg.indexOf('rgb(59') !== -1 || bg.indexOf('#3b82f6') !== -1;
+  }
+  function isActivePill(b){
+    var bd = (b.style && b.style.border || '').toLowerCase();
+    return bd.indexOf('rgb(59') !== -1 || bd.indexOf('#3b82f6') !== -1;
+  }
+
+  function getContext(){
+    var ctx = { scheme:'All Strategies', period:'', dataAsOf:'', tab:'', drill:'', extras:[] };
+    var buttons = document.querySelectorAll('button');
+
+    // Data-as-of badge
+    var spans = document.querySelectorAll('span');
+    for (var i=0;i<spans.length;i++){
+      var t = spans[i].textContent || '';
+      if (t.indexOf('Data as of:') !== -1){
+        ctx.dataAsOf = t.replace(/^Data as of:\s*/,'').trim();
+        break;
+      }
+    }
+
+    // Tab
+    var tabLabels = ['Month-on-Month','Custom Date Range','Time Windows','Scheme Returns & Risk'];
+    for (var i=0;i<buttons.length;i++){
+      var lbl = (buttons[i].textContent||'').trim();
+      if (tabLabels.indexOf(lbl) !== -1 && isActiveBtn(buttons[i])){ ctx.tab = lbl; break; }
+    }
+
+    // Strategies (pills MODERATE / AGGRESSIVE / EQUITY)
+    var strategyLabels = ['MODERATE','AGGRESSIVE','EQUITY'];
+    var picked = [];
+    for (var i=0;i<buttons.length;i++){
+      var lbl = (buttons[i].textContent||'').trim();
+      if (strategyLabels.indexOf(lbl) !== -1 && isActivePill(buttons[i])){
+        picked.push(lbl.charAt(0)+lbl.slice(1).toLowerCase());
+      }
+    }
+    if (picked.length === 3) ctx.scheme = 'All Strategies (Moderate + Aggressive + Equity)';
+    else if (picked.length) ctx.scheme = picked.join(' + ');
+
+    // Drill (Asset Class / Category / Instrument)
+    var drillLabels = ['Asset Class','Category','Instrument'];
+    for (var i=0;i<buttons.length;i++){
+      var lbl = (buttons[i].textContent||'').trim();
+      if (drillLabels.indexOf(lbl) !== -1 && isActiveBtn(buttons[i])){ ctx.drill = lbl; break; }
+    }
+
+    // Period per tab
+    if (ctx.tab === 'Custom Date Range'){
+      var dates = document.querySelectorAll('input[type="date"]');
+      if (dates.length >= 2) ctx.period = (dates[0].value||'?') + ' to ' + (dates[1].value||'?');
+    } else if (ctx.tab === 'Time Windows'){
+      var winLabels = ['1M','3M','6M','12M'];
+      for (var i=0;i<buttons.length;i++){
+        var lbl = (buttons[i].textContent||'').trim();
+        if (winLabels.indexOf(lbl) !== -1 && isActiveBtn(buttons[i])){ ctx.period = 'Trailing ' + lbl; break; }
+      }
+    } else {
+      // MoM or Risk: use header sub-text ("Apr 2025 — Jun 2026 · X months …")
+      var h1 = document.querySelector('h1');
+      if (h1 && h1.parentElement){
+        var t = h1.parentElement.textContent || '';
+        var m = t.match(/([A-Z][a-z]+ \d{4})\s*[—-]\s*([A-Z][a-z]+ \d{4})/);
+        if (m) ctx.period = m[1] + ' to ' + m[2];
+      }
+    }
+    if (!ctx.period) ctx.period = 'As displayed';
+
+    // Scheme Returns & Risk view (Time Windows / Month-on-Month / Custom Range)
+    if (ctx.tab === 'Scheme Returns & Risk'){
+      var riskViews = ['Time Windows','Month-on-Month','Custom Range'];
+      for (var i=0;i<buttons.length;i++){
+        var lbl = (buttons[i].textContent||'').trim();
+        if (riskViews.indexOf(lbl) !== -1 && isActiveBtn(buttons[i])){ ctx.extras.push('View: '+lbl); break; }
+      }
+    }
+
+    return ctx;
+  }
+
+  function extractTables(){
+    var root = document.getElementById('root');
+    if (!root) return [];
+    var tables = root.querySelectorAll('table');
+    var out = [];
+    tables.forEach(function(tbl, idx){
+      // Skip tables inside the header/nav strip
+      var top = tbl.getBoundingClientRect().top + window.scrollY;
+      if (top < 100) return;
+      var rows = tbl.querySelectorAll('tr');
+      if (!rows.length) return;
+      var data = [];
+      rows.forEach(function(tr){
+        var cells = tr.querySelectorAll('th,td');
+        var row = [];
+        cells.forEach(function(c){
+          var txt = (c.textContent||'').replace(/\s+/g,' ').trim();
+          row.push(txt);
+        });
+        if (row.length) data.push(row);
+      });
+      if (data.length < 2) return;
+      // Find nearest h3 title above
+      var title = 'Table ' + (idx+1);
+      var el = tbl.parentElement;
+      for (var d=0; d<6 && el; d++){
+        var h = el.querySelector('h3');
+        if (h && h.textContent){ title = h.textContent.trim(); break; }
+        el = el.parentElement;
+      }
+      out.push({ title: title, data: data });
+    });
+    return out;
+  }
+
+  function safeSheetName(n){
+    return (n||'Sheet').replace(/[\\/?*\[\]:]/g,'').slice(0,28) || 'Sheet';
+  }
+
+  function downloadExcel(){
+    if (!window.XLSX){ alert('Excel library still loading. Try again in a moment.'); return; }
+    var ctx = getContext();
+    var tables = extractTables();
+    var wb = XLSX.utils.book_new();
+
+    // Cover sheet
+    var cover = [
+      ['Ionic Allocate — Attribution Analysis'],
+      [''],
+      ['Scheme', ctx.scheme],
+      ['Period', ctx.period],
+      ['View', ctx.tab],
+      ['Drill', ctx.drill || '—'],
+      ['Data as of', ctx.dataAsOf],
+      ['Generated', new Date().toLocaleString()],
+    ];
+    if (ctx.extras.length) ctx.extras.forEach(function(x){ cover.push([x]); });
+    var wsCover = XLSX.utils.aoa_to_sheet(cover);
+    wsCover['!cols'] = [{wch:16},{wch:60}];
+    // Bold title row (best-effort)
+    if (wsCover['A1']) wsCover['A1'].s = { font: { bold: true, sz: 14 } };
+    XLSX.utils.book_append_sheet(wb, wsCover, 'Cover');
+
+    var used = { 'Cover': 1 };
+    tables.forEach(function(t, i){
+      var name = safeSheetName(t.title);
+      var base = name; var c = 1;
+      while (used[name]) { c++; name = (base.slice(0, 25)) + '_' + c; }
+      used[name] = 1;
+
+      var aoa = [
+        ['Scheme:', ctx.scheme],
+        ['Period:', ctx.period],
+        ['View:', ctx.tab],
+        ['Drill:', ctx.drill || '—'],
+        ['Table:', t.title],
+        ['Data as of:', ctx.dataAsOf],
+        [''],
+      ].concat(t.data);
+      var ws = XLSX.utils.aoa_to_sheet(aoa);
+      // Column widths
+      var widths = [];
+      aoa.forEach(function(r){ r.forEach(function(v, j){
+        var l = (v||'').toString().length;
+        if (l > (widths[j]||0)) widths[j] = l;
+      }); });
+      ws['!cols'] = widths.map(function(w){ return { wch: Math.min(35, Math.max(10, w+2)) }; });
+      XLSX.utils.book_append_sheet(wb, ws, name);
+    });
+
+    var fn = 'Ionic_Attribution_' + (ctx.tab||'export').replace(/\W+/g,'_')
+              + (ctx.scheme && ctx.scheme.indexOf('All')===-1 ? '_'+ctx.scheme.replace(/\W+/g,'_') : '')
+              + '_' + new Date().toISOString().slice(0,10) + '.xlsx';
+    XLSX.writeFile(wb, fn);
+  }
+
+  function downloadPDF(){
+    var jspdfNS = window.jspdf || window.jsPDF;
+    if (!jspdfNS || !jspdfNS.jsPDF){ alert('PDF library still loading. Try again in a moment.'); return; }
+    var ctx = getContext();
+    var tables = extractTables();
+    var doc = new jspdfNS.jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
+    var pageW = doc.internal.pageSize.getWidth();
+    var pageH = doc.internal.pageSize.getHeight();
+
+    // Cover header
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.rect(0, 0, pageW, 60, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(18); doc.setFont(undefined,'bold');
+    doc.text('Ionic Allocate — Attribution Analysis', 40, 38);
+    doc.setFontSize(10); doc.setFont(undefined,'normal');
+    doc.text('Generated: ' + new Date().toLocaleString(), pageW-40, 38, {align:'right'});
+
+    doc.setTextColor(20,20,20);
+    doc.setFontSize(11); doc.setFont(undefined,'bold');
+    doc.text('Scheme:', 40, 90);
+    doc.setFont(undefined,'normal'); doc.text(ctx.scheme, 105, 90);
+    doc.setFont(undefined,'bold'); doc.text('Period:', 40, 108);
+    doc.setFont(undefined,'normal'); doc.text(ctx.period, 105, 108);
+    doc.setFont(undefined,'bold'); doc.text('View:', 40, 126);
+    doc.setFont(undefined,'normal'); doc.text(ctx.tab + (ctx.drill ? ' — ' + ctx.drill : ''), 105, 126);
+    doc.setFont(undefined,'bold'); doc.text('Data as of:', 40, 144);
+    doc.setFont(undefined,'normal'); doc.text(ctx.dataAsOf || '—', 105, 144);
+    if (ctx.extras.length){
+      doc.setFont(undefined,'normal').setFontSize(9);
+      doc.text(ctx.extras.join('  ·  '), 40, 160);
+    }
+    doc.setDrawColor(220); doc.setLineWidth(0.5); doc.line(40, 172, pageW-40, 172);
+
+    var startY = 190;
+    tables.forEach(function(t, i){
+      if (startY > pageH - 120){ doc.addPage(); startY = 40; }
+      doc.setFontSize(12); doc.setFont(undefined,'bold'); doc.setTextColor(15,23,42);
+      doc.text(t.title, 40, startY);
+      var header = t.data.length ? t.data[0] : [];
+      var body = t.data.slice(1);
+      doc.autoTable({
+        head: [header],
+        body: body,
+        startY: startY + 8,
+        margin: {left:40, right:40},
+        styles: { fontSize: 7, cellPadding: 3, overflow:'linebreak' },
+        headStyles: { fillColor: [30,58,138], textColor:255, fontStyle:'bold' },
+        alternateRowStyles: { fillColor: [248,250,252] },
+        theme: 'grid',
+      });
+      startY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : startY+80) + 26;
+    });
+
+    // Footer page numbers
+    var pages = doc.internal.getNumberOfPages();
+    for (var p=1; p<=pages; p++){
+      doc.setPage(p);
+      doc.setFontSize(8); doc.setTextColor(120);
+      doc.text('Ionic Allocate — Attribution Analysis  ·  ' + ctx.scheme + '  ·  ' + ctx.period,
+        40, pageH-18);
+      doc.text('Page ' + p + ' of ' + pages, pageW-40, pageH-18, {align:'right'});
+    }
+
+    var fn = 'Ionic_Attribution_' + (ctx.tab||'export').replace(/\W+/g,'_')
+              + (ctx.scheme && ctx.scheme.indexOf('All')===-1 ? '_'+ctx.scheme.replace(/\W+/g,'_') : '')
+              + '_' + new Date().toISOString().slice(0,10) + '.pdf';
+    doc.save(fn);
+  }
+
+  function mountPanel(){
+    if (document.getElementById('ionic-dl-panel')) return;
+    var panel = document.createElement('div');
+    panel.id = 'ionic-dl-panel';
+    panel.style.cssText = [
+      'position:fixed','bottom:20px','right:20px','z-index:99999',
+      'display:flex','gap:8px','align-items:center',
+      'background:white','border:1px solid #E5E7EB','border-radius:10px',
+      'padding:8px 10px','box-shadow:0 6px 18px rgba(0,0,0,0.12)',
+      'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'
+    ].join(';');
+    panel.innerHTML =
+      '<span style="font-size:11px;color:#6B7280;font-weight:600;margin-right:4px;">Download:</span>' +
+      '<button id="ionic-dl-xlsx" style="background:#16A34A;color:white;border:none;border-radius:6px;padding:8px 14px;font-weight:600;font-size:12px;cursor:pointer;">Excel</button>' +
+      '<button id="ionic-dl-pdf" style="background:#DC2626;color:white;border:none;border-radius:6px;padding:8px 14px;font-weight:600;font-size:12px;cursor:pointer;">PDF</button>';
+    document.body.appendChild(panel);
+    function wrap(id, fn){
+      var b = document.getElementById(id);
+      b.addEventListener('click', function(){
+        var orig = b.textContent; b.disabled = true; b.textContent = 'Generating…';
+        setTimeout(function(){
+          try { fn(); } catch(e){ console.error(e); alert(orig+' export error: '+e.message); }
+          b.disabled = false; b.textContent = orig;
+        }, 40);
+      });
+    }
+    wrap('ionic-dl-xlsx', downloadExcel);
+    wrap('ionic-dl-pdf', downloadPDF);
+  }
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(mountPanel, 100);
+  } else {
+    window.addEventListener('DOMContentLoaded', function(){ setTimeout(mountPanel, 100); });
+  }
+})();
+</script>
+<!-- ═══ END DOWNLOAD FEATURE ═══ -->
+
 </body>
 </html>
