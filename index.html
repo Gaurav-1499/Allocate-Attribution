@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-08-13.2 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-08-13.3 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ionic Allocate — Attribution Analysis</title>
   <style>
@@ -1942,17 +1942,7 @@ function AttributionDashboard() {
     dataKey: g,
     stackId: "a",
     fill: COLORS[g] || `hsl(${momData.groups.indexOf(g) * 37}, 60%, 55%)`
-  })), drillLevel === "assetClass" && /*#__PURE__*/React.createElement(Line, {
-    type: "monotone",
-    dataKey: "_blendedBench",
-    name: "Blended Benchmark",
-    stroke: "#EF4444",
-    strokeWidth: 2,
-    strokeDasharray: "6 3",
-    dot: {
-      r: 3
-    }
-  })))), /*#__PURE__*/React.createElement("div", {
+  }))))), /*#__PURE__*/React.createElement("div", {
     style: card
   }, /*#__PURE__*/React.createElement("h3", {
     style: {
@@ -2004,28 +1994,14 @@ function AttributionDashboard() {
       color: "#9CA3AF",
       marginTop: 2
     }
-  }, /*#__PURE__*/React.createElement("span", null, "Port"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", null, "Bench"), /*#__PURE__*/React.createElement("span", null, "/"), /*#__PURE__*/React.createElement("span", null, "Active")))), /*#__PURE__*/React.createElement("th", {
+  }, /*#__PURE__*/React.createElement("span", null, "Port")))), /*#__PURE__*/React.createElement("th", {
     style: {
       padding: "8px 12px",
       textAlign: "right",
       fontWeight: 700,
       color: "#111827"
     }
-  }, "Total"), /*#__PURE__*/React.createElement("th", {
-    style: {
-      padding: "8px 12px",
-      textAlign: "right",
-      fontWeight: 600,
-      color: "#EF4444"
-    }
-  }, "Benchmark"), /*#__PURE__*/React.createElement("th", {
-    style: {
-      padding: "8px 12px",
-      textAlign: "right",
-      fontWeight: 600,
-      color: "#8B5CF6"
-    }
-  }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, momData.data.map((row, i) => {
+  }, "Total"))), /*#__PURE__*/React.createElement("tbody", null, momData.data.map((row, i) => {
     const bench = row._blendedBench;
     const activeRet = row._total - (bench || 0);
     return /*#__PURE__*/React.createElement("tr", {
@@ -2059,16 +2035,7 @@ function AttributionDashboard() {
         style: {
           color: contribColor(port)
         }
-      }, fmt(port)), " / ", /*#__PURE__*/React.createElement("span", {
-        style: {
-          color: "#EF4444"
-        }
-      }, bc !== null && bc !== undefined ? fmt(bc) : "—"), " / ", /*#__PURE__*/React.createElement("span", {
-        style: {
-          color: contribColor(act),
-          fontWeight: 600
-        }
-      }, act !== null ? fmt(act) : "—"));
+      }, fmt(port)));
     }), /*#__PURE__*/React.createElement("td", {
       style: {
         padding: "8px 12px",
@@ -2077,22 +2044,7 @@ function AttributionDashboard() {
         fontWeight: 700,
         color: contribColor(row._total)
       }
-    }, fmt(row._total)), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "8px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        color: "#EF4444"
-      }
-    }, bench !== null && bench !== undefined ? fmt(bench) : "—"), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "8px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        fontWeight: 600,
-        color: contribColor(activeRet)
-      }
-    }, bench !== null && bench !== undefined ? fmt(activeRet) : "—"));
+    }, fmt(row._total)));
   }), (() => {
     const cumReturns = momData.data.map(r => r._total);
     const linked = geometricLink(cumReturns);
@@ -2124,21 +2076,7 @@ function AttributionDashboard() {
         fontFamily: "monospace",
         color: contribColor(linked)
       }
-    }, fmt(linked)), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "10px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        color: "#EF4444"
-      }
-    }, linkedBench !== null ? fmt(linkedBench) : "—"), /*#__PURE__*/React.createElement("td", {
-      style: {
-        padding: "10px 12px",
-        textAlign: "right",
-        fontFamily: "monospace",
-        color: contribColor(activeReturn)
-      }
-    }, activeReturn !== null ? fmt(activeReturn) : "—"));
+    }, fmt(linked)));
   })()))))), activeScreen === "dynamic" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       ...card,
@@ -2191,17 +2129,7 @@ function AttributionDashboard() {
       fontWeight: 700,
       color: contribColor(dynamicData.totalPortfolio)
     }
-  }, fmt(dynamicData.totalPortfolio)), dynamicData.totalBlended !== null && /*#__PURE__*/React.createElement(React.Fragment, null, " \xB7 Benchmark: ", /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontWeight: 700,
-      color: "#EF4444"
-    }
-  }, fmt(dynamicData.totalBlended))), dynamicData.totalBlended !== null && /*#__PURE__*/React.createElement(React.Fragment, null, " \xB7 Active: ", /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontWeight: 700,
-      color: contribColor(dynamicData.totalPortfolio - dynamicData.totalBlended)
-    }
-  }, fmt(dynamicData.totalPortfolio - dynamicData.totalBlended))))), /*#__PURE__*/React.createElement("div", {
+  }, fmt(dynamicData.totalPortfolio)))), /*#__PURE__*/React.createElement("div", {
     style: {
       ...card,
       display: "flex",
@@ -2310,10 +2238,6 @@ function AttributionDashboard() {
     dataKey: "portfolio",
     fill: "#3B82F6",
     name: "Portfolio"
-  }), /*#__PURE__*/React.createElement(Bar, {
-    dataKey: "benchmark",
-    fill: "#EF4444",
-    name: "Benchmark"
   }))))), /*#__PURE__*/React.createElement("div", {
     style: card
   }, /*#__PURE__*/React.createElement("div", {
@@ -2394,21 +2318,7 @@ function AttributionDashboard() {
       fontWeight: 600,
       color: "#3B82F6"
     }
-  }, "Portfolio"), /*#__PURE__*/React.createElement("th", {
-    style: {
-      padding: "8px 12px",
-      textAlign: "right",
-      fontWeight: 600,
-      color: "#EF4444"
-    }
-  }, "Benchmark"), /*#__PURE__*/React.createElement("th", {
-    style: {
-      padding: "8px 12px",
-      textAlign: "right",
-      fontWeight: 600,
-      color: "#8B5CF6"
-    }
-  }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, (() => {
+  }, "Portfolio"))), /*#__PURE__*/React.createElement("tbody", null, (() => {
     let tableRows = [];
     if (dynamicDrill === "assetClass") {
       tableRows = AC_ORDER.filter(ac => dynamicData.byAC[ac] !== undefined).map(ac => ({
@@ -2483,22 +2393,7 @@ function AttributionDashboard() {
           fontWeight: 600,
           color: contribColor(row.contribution)
         }
-      }, fmt(row.contribution)), /*#__PURE__*/React.createElement("td", {
-        style: {
-          padding: "7px 12px",
-          textAlign: "right",
-          fontFamily: "monospace",
-          color: "#EF4444"
-        }
-      }, bc !== null && bc !== undefined ? fmt(bc) : "—"), /*#__PURE__*/React.createElement("td", {
-        style: {
-          padding: "7px 12px",
-          textAlign: "right",
-          fontFamily: "monospace",
-          fontWeight: 600,
-          color: contribColor(activeVal)
-        }
-      }, activeVal !== null ? fmt(activeVal) : "—"));
+      }, fmt(row.contribution)));
     });
   })()))), dynamicDrill === "instrument" && instrPages > 1 && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2582,7 +2477,7 @@ function AttributionDashboard() {
   }, l))), windowData && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
+      gridTemplateColumns: "1fr",
       gap: 16,
       marginBottom: 16
     }
@@ -2607,49 +2502,7 @@ function AttributionDashboard() {
       fontFamily: "monospace",
       marginTop: 6
     }
-  }, fmt(windowData.totalReturn))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      ...card,
-      textAlign: "center"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#6B7280",
-      fontWeight: 600,
-      textTransform: "uppercase",
-      letterSpacing: 1
-    }
-  }, "Blended Benchmark"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 28,
-      fontWeight: 700,
-      color: "#EF4444",
-      fontFamily: "monospace",
-      marginTop: 6
-    }
-  }, windowData.totalBlended !== null ? fmt(windowData.totalBlended) : "—")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      ...card,
-      textAlign: "center"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "#6B7280",
-      fontWeight: 600,
-      textTransform: "uppercase",
-      letterSpacing: 1
-    }
-  }, "Active Return"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 28,
-      fontWeight: 700,
-      color: contribColor(windowData.totalBlended !== null ? windowData.totalReturn - windowData.totalBlended : 0),
-      fontFamily: "monospace",
-      marginTop: 6
-    }
-  }, windowData.totalBlended !== null ? fmt(windowData.totalReturn - windowData.totalBlended) : "—"))), windowDrill !== "instrument" && /*#__PURE__*/React.createElement("div", {
+  }, fmt(windowData.totalReturn)))), windowDrill !== "instrument" && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -2703,10 +2556,6 @@ function AttributionDashboard() {
     dataKey: "portfolio",
     fill: "#3B82F6",
     name: "Portfolio"
-  }), /*#__PURE__*/React.createElement(Bar, {
-    dataKey: "benchmark",
-    fill: "#EF4444",
-    name: "Benchmark"
   })))), /*#__PURE__*/React.createElement("div", {
     style: card
   }, /*#__PURE__*/React.createElement("h3", {
@@ -2799,21 +2648,7 @@ function AttributionDashboard() {
       fontWeight: 600,
       color: "#3B82F6"
     }
-  }, "Portfolio"), /*#__PURE__*/React.createElement("th", {
-    style: {
-      padding: "7px 12px",
-      textAlign: "right",
-      fontWeight: 600,
-      color: "#EF4444"
-    }
-  }, "Benchmark"), /*#__PURE__*/React.createElement("th", {
-    style: {
-      padding: "7px 12px",
-      textAlign: "right",
-      fontWeight: 600,
-      color: "#8B5CF6"
-    }
-  }, "Active"))), /*#__PURE__*/React.createElement("tbody", null, (() => {
+  }, "Portfolio"))), /*#__PURE__*/React.createElement("tbody", null, (() => {
     let tableRows = [];
     if (windowDrill === "assetClass") {
       tableRows = AC_ORDER.filter(ac => windowData.byAC[ac] !== undefined).map(ac => ({
@@ -2888,22 +2723,7 @@ function AttributionDashboard() {
           fontWeight: 600,
           color: contribColor(row.contribution)
         }
-      }, fmt(row.contribution)), /*#__PURE__*/React.createElement("td", {
-        style: {
-          padding: "7px 12px",
-          textAlign: "right",
-          fontFamily: "monospace",
-          color: "#EF4444"
-        }
-      }, bc !== null && bc !== undefined ? fmt(bc) : "—"), /*#__PURE__*/React.createElement("td", {
-        style: {
-          padding: "7px 12px",
-          textAlign: "right",
-          fontFamily: "monospace",
-          fontWeight: 600,
-          color: contribColor(activeVal)
-        }
-      }, activeVal !== null ? fmt(activeVal) : "—"));
+      }, fmt(row.contribution)));
     });
   })()))))))), activeScreen === "risk" && riskData && /*#__PURE__*/React.createElement("div", null,
   /*#__PURE__*/React.createElement("div", {
@@ -2973,7 +2793,7 @@ function AttributionDashboard() {
           /*#__PURE__*/React.createElement("tr", { style: { background: "#F3F4F6" } },
             /*#__PURE__*/React.createElement("th", { rowSpan: 2, style: { padding: "6px 10px", textAlign: "left", borderBottom: "2px solid #E5E7EB", verticalAlign: "bottom" } }, "Scheme"),
             riskData.timeWindows.map(function(tw) {
-              var nCols = 2 + (showFRI ? 1 : 0) + (showSEBI ? 1 : 0) + (showMF ? 1 : 0);
+              var nCols = 1 + (showFRI ? 1 : 0) + (showSEBI ? 1 : 0) + (showMF ? 1 : 0);
               return /*#__PURE__*/React.createElement("th", { key: tw, colSpan: nCols, style: { padding: "6px 10px", textAlign: "center", borderBottom: "1px solid #D1D5DB", background: "#EFF6FF", fontWeight: 700 } }, tw);
             })
           ),
@@ -2985,7 +2805,6 @@ function AttributionDashboard() {
               if (showFRI) cols.push(/*#__PURE__*/React.createElement("th", { key: tw + "-fri", style: { padding: "4px 8px", textAlign: "right", borderBottom: "2px solid #E5E7EB", fontSize: 11, color: "#EC4899" } }, "FRI"));
               if (showSEBI) cols.push(/*#__PURE__*/React.createElement("th", { key: tw + "-sebi", style: { padding: "4px 8px", textAlign: "right", borderBottom: "2px solid #E5E7EB", fontSize: 11, color: "#8B5CF6" } }, "SEBI BM"));
               if (showMF) cols.push(/*#__PURE__*/React.createElement("th", { key: tw + "-mf", style: { padding: "4px 8px", textAlign: "right", borderBottom: "2px solid #E5E7EB", fontSize: 11, color: "#059669" } }, "MF Cat"));
-              cols.push(/*#__PURE__*/React.createElement("th", { key: tw + "-a", style: { padding: "4px 8px", textAlign: "right", borderBottom: "2px solid #E5E7EB", fontSize: 11, color: "#6B7280" } }, "Active"));
               return cols;
             }).flat()
           )
@@ -3007,7 +2826,6 @@ function AttributionDashboard() {
                   if (showFRI) emptyCols.push(/*#__PURE__*/React.createElement("td", { key: tw + "-fri", style: { padding: "6px 8px", textAlign: "right", color: "#D1D5DB" } }, dash));
                   if (showSEBI) emptyCols.push(/*#__PURE__*/React.createElement("td", { key: tw + "-sebi", style: { padding: "6px 8px", textAlign: "right", color: "#D1D5DB" } }, dash));
                   if (showMF) emptyCols.push(/*#__PURE__*/React.createElement("td", { key: tw + "-mf", style: { padding: "6px 8px", textAlign: "right", color: "#D1D5DB" } }, dash));
-                  emptyCols.push(/*#__PURE__*/React.createElement("td", { key: tw + "-a", style: { padding: "6px 8px", textAlign: "right", color: "#D1D5DB" } }, dash));
                   return emptyCols;
                 }
                 var dataCols = [/*#__PURE__*/React.createElement("td", { key: tw + "-p", style: { padding: "6px 8px", textAlign: "right", fontFamily: "monospace", color: contribColor(r.fCum) } }, fmt(r.fCum))];
@@ -3024,8 +2842,6 @@ function AttributionDashboard() {
                   var mfVal = selCat ? mfCatReturn(selCat, (riskData.windowStartDates || {})[tw] || "", riskData.latestEnd || "", mfMode) : r.mfReturn;
                   dataCols.push(/*#__PURE__*/React.createElement("td", { key: tw + "-mf", style: { padding: "6px 8px", textAlign: "right", fontFamily: "monospace", color: "#059669" } }, mfVal != null ? fmt(mfVal) : dash));
                 }
-                var activeVal = r.fCum - r.bCum;
-                dataCols.push(/*#__PURE__*/React.createElement("td", { key: tw + "-a", style: { padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontWeight: 600, color: contribColor(activeVal) } }, fmt(activeVal)));
                 return dataCols;
               }).flat()
             );
@@ -3078,7 +2894,7 @@ function AttributionDashboard() {
       if (results.length === 0) return /*#__PURE__*/React.createElement("div", { style: { color: "#9CA3AF", padding: 20 } }, "No data available.");
 
       // Build column definitions per strategy: Portfolio + enabled benchmark columns
-      var bmCols = [{ key: "bm", label: "BM", color: "#EF4444", riskKey: null }];
+      var bmCols = [];
       if (showFRI) bmCols.push({ key: "fri", label: "FRI", color: "#EC4899", riskKey: "friRisk" });
       if (showSEBI) bmCols.push({ key: "sebi", label: "SEBI", color: "#8B5CF6", riskKey: "sebiRisk" });
       if (showMF) bmCols.push({ key: "mf", label: "MF Cat", color: "#059669", riskKey: "mfRisk" });
@@ -3305,7 +3121,6 @@ function AttributionDashboard() {
                 showFRI && /*#__PURE__*/React.createElement("th", { style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#EC4899" } }, "FRI (Cum)"),
                 showSEBI && /*#__PURE__*/React.createElement("th", { style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#8B5CF6" } }, "SEBI BM (Cum)"),
                 showMF && /*#__PURE__*/React.createElement("th", { style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB", color: "#059669" } }, "MF Cat (Cum)"),
-                /*#__PURE__*/React.createElement("th", { style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB" } }, "Active"),
                 /*#__PURE__*/React.createElement("th", { style: { padding: "8px 12px", textAlign: "right", borderBottom: "2px solid #E5E7EB" } }, "Days")
               )
             ),
@@ -3320,7 +3135,6 @@ function AttributionDashboard() {
                   showFRI && /*#__PURE__*/React.createElement("td", { style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: "#EC4899" } }, (function() { var v = friReturn(niftyTRMap, niftyArbMap, r.strategy, riskDynStart, riskDynEnd); return v != null ? fmt(v) : "\u2014"; })()),
                   showSEBI && /*#__PURE__*/React.createElement("td", { style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: "#8B5CF6" } }, (function() { var v = sebiBmReturn(r.strategy, riskDynStart, riskDynEnd); return v != null ? fmt(v) : "\u2014"; })()),
                   showMF && /*#__PURE__*/React.createElement("td", { style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", color: "#059669" } }, (function() { var cat = mfCatSelection[r.strategy] || (SCHEME_CAT_MAP[r.strategy] ? SCHEME_CAT_MAP[r.strategy][0] : null); var v = cat ? mfCatReturn(cat, riskDynStart, riskDynEnd, mfMode) : null; return v != null ? fmt(v) : "\u2014"; })()),
-                  /*#__PURE__*/React.createElement("td", { style: { padding: "8px 12px", textAlign: "right", fontFamily: "monospace", fontWeight: 600, color: contribColor(r.fCum - r.bCum) } }, fmt(r.fCum - r.bCum)),
                   /*#__PURE__*/React.createElement("td", { style: { padding: "8px 12px", textAlign: "right", color: "#6B7280" } }, r.n)
                 );
               })
@@ -3345,7 +3159,7 @@ function AttributionDashboard() {
 
         /*#__PURE__*/React.createElement("h3", { style: { fontSize: 15, fontWeight: 600, marginTop: 24, marginBottom: 8, color: "#1F2937" } }, "Risk Metrics — Custom Range"),
         (function() {
-          var bmCols2 = [{ key: "bm", label: "BM", color: "#EF4444", riskKey: null }];
+          var bmCols2 = [];
           if (showFRI) bmCols2.push({ key: "fri", label: "FRI", color: "#EC4899", riskKey: "friRisk" });
           if (showSEBI) bmCols2.push({ key: "sebi", label: "SEBI", color: "#8B5CF6", riskKey: "sebiRisk" });
           if (showMF) bmCols2.push({ key: "mf", label: "MF Cat", color: "#059669", riskKey: "mfRisk" });
