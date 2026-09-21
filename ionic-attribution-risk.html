@@ -3,7 +3,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-09-16.4 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Build: v2026-09-16.5 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IONIC Attribution & Risk Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -2903,6 +2903,8 @@ var RiskScr = function RiskScr(_ref15) {
           var sebi_r = sebiBmR(sebiD, sn, sd2, ed);
           var mf_r = showMF && mfCat[sn] ? mfCatReturn(mfD, mfCat[sn], sd2, ed, mfMode) : null;
           var qPos = showMF && mfCat[sn] ? mfQuartilePos(mfD, mfCat[sn], sd2, ed, sr) : null;
+          var friRiskM = getRisk(sn, sd2, ed);
+          var sebiRiskM = getSebiRisk(sn, sd2, ed);
           return {
             month: mk,
             label: fMY(mk + "-01"),
@@ -2910,7 +2912,11 @@ var RiskScr = function RiskScr(_ref15) {
             fri: fri_r,
             sebi: sebi_r,
             mf: mf_r,
-            qPos: qPos
+            qPos: qPos,
+            friSh: friRiskM ? friRiskM.bSh : null,
+            friSo: friRiskM ? friRiskM.bSo : null,
+            sebiSh: sebiRiskM ? sebiRiskM.bSh : null,
+            sebiSo: sebiRiskM ? sebiRiskM.bSo : null
           };
         });
       };
@@ -2923,7 +2929,7 @@ var RiskScr = function RiskScr(_ref15) {
       _iterator24.f();
     }
     return R;
-  }, [strats, navD, bmS, st, sebiD, mfD, mfCat, mfMode, showMF]);
+  }, [strats, navD, bmS, st, sebiD, mfD, mfCat, mfMode, showMF, getRisk, getSebiRisk]);
 
   // CUSTOM
   var custD = useMemo(function () {
@@ -3591,7 +3597,35 @@ var RiskScr = function RiskScr(_ref15) {
         borderBottom: "1px solid #E5E7EB",
         color: COL.act
       }
-    }, "Alpha vs FRI"), showQ && showMF && mfCat[sn] && /*#__PURE__*/React.createElement("th", {
+    }, "Alpha vs FRI"), showFRI && /*#__PURE__*/React.createElement("th", {
+      style: {
+        padding: "6px 12px",
+        textAlign: "right",
+        borderBottom: "1px solid #E5E7EB",
+        color: "#EC4899"
+      }
+    }, "FRI Sharpe"), showFRI && /*#__PURE__*/React.createElement("th", {
+      style: {
+        padding: "6px 12px",
+        textAlign: "right",
+        borderBottom: "1px solid #E5E7EB",
+        color: "#EC4899"
+      }
+    }, "FRI Sortino"), showSEBI && /*#__PURE__*/React.createElement("th", {
+      style: {
+        padding: "6px 12px",
+        textAlign: "right",
+        borderBottom: "1px solid #E5E7EB",
+        color: "#8B5CF6"
+      }
+    }, "SEBI Sharpe"), showSEBI && /*#__PURE__*/React.createElement("th", {
+      style: {
+        padding: "6px 12px",
+        textAlign: "right",
+        borderBottom: "1px solid #E5E7EB",
+        color: "#8B5CF6"
+      }
+    }, "SEBI Sortino"), showQ && showMF && mfCat[sn] && /*#__PURE__*/React.createElement("th", {
       style: {
         padding: "6px 12px",
         textAlign: "center",
@@ -3654,7 +3688,39 @@ var RiskScr = function RiskScr(_ref15) {
           color: cCol(alpha || 0),
           fontWeight: 500
         }
-      }, alpha != null ? fP(alpha) : "—"), showQ && showMF && mfCat[sn] && /*#__PURE__*/React.createElement("td", {
+      }, alpha != null ? fP(alpha) : "—"), showFRI && /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "6px 12px",
+          textAlign: "right",
+          borderBottom: "1px solid #F3F4F6",
+          color: "#EC4899",
+          fontFamily: "monospace"
+        }
+      }, r.friSh != null ? r.friSh.toFixed(2) : "—"), showFRI && /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "6px 12px",
+          textAlign: "right",
+          borderBottom: "1px solid #F3F4F6",
+          color: "#EC4899",
+          fontFamily: "monospace"
+        }
+      }, r.friSo != null ? r.friSo.toFixed(2) : "—"), showSEBI && /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "6px 12px",
+          textAlign: "right",
+          borderBottom: "1px solid #F3F4F6",
+          color: "#8B5CF6",
+          fontFamily: "monospace"
+        }
+      }, r.sebiSh != null ? r.sebiSh.toFixed(2) : "—"), showSEBI && /*#__PURE__*/React.createElement("td", {
+        style: {
+          padding: "6px 12px",
+          textAlign: "right",
+          borderBottom: "1px solid #F3F4F6",
+          color: "#8B5CF6",
+          fontFamily: "monospace"
+        }
+      }, r.sebiSo != null ? r.sebiSo.toFixed(2) : "—"), showQ && showMF && mfCat[sn] && /*#__PURE__*/React.createElement("td", {
         style: {
           padding: "6px 12px",
           textAlign: "center",
