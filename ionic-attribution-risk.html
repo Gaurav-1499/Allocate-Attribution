@@ -3,7 +3,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-09-16.5 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Build: v2026-09-16.7 | 2026-05-26 09:29 UTC --><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IONIC Attribution & Risk Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -3078,7 +3078,7 @@ var RiskScr = function RiskScr(_ref15) {
           textAlign: "right",
           borderBottom: "1px solid #E5E7EB"
         }
-      }, w);
+      }, w === "12M" ? "12M (Ann.)" : w);
     }))), /*#__PURE__*/React.createElement("tbody", null, bmRows.map(function (row, ri) {
       return /*#__PURE__*/React.createElement("tr", {
         key: ri,
@@ -3096,6 +3096,7 @@ var RiskScr = function RiskScr(_ref15) {
         var _wData$sn;
         var d = (_wData$sn = wData[sn]) === null || _wData$sn === void 0 ? void 0 : _wData$sn[w];
         var v = d ? d[row.key] : null;
+        if (w === "12M" && row.key === "sr" && d && d.risk && d.risk.fAnn != null) v = d.risk.fAnn * 100;
         return /*#__PURE__*/React.createElement("td", {
           key: w,
           style: {
@@ -3133,6 +3134,13 @@ var RiskScr = function RiskScr(_ref15) {
         }
       }, a != null ? fP(a) : "—");
     }))))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#6B7280",
+        fontStyle: "italic",
+        padding: "6px 12px 10px"
+      }
+    }, "Sharpe / Sortino = (annualised return − 6.5% risk-free) / annualised std dev of returns. For short windows during drawdowns, the annualised return can be strongly negative, producing large negative Sharpe values — this reflects the extrapolated annual pace of loss, not the actual short-window loss."), /*#__PURE__*/React.createElement("div", {
       style: {
         background: "white",
         borderRadius: 8,
@@ -3860,7 +3868,14 @@ var RiskScr = function RiskScr(_ref15) {
         fontWeight: 600,
         marginBottom: 8
       }
-    }, "Risk-Adjusted Metrics"), /*#__PURE__*/React.createElement(RT, {
+    }, "Risk-Adjusted Metrics"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#6B7280",
+        fontStyle: "italic",
+        padding: "4px 0 8px"
+      }
+    }, "Sharpe / Sortino = (annualised return − 6.5% risk-free) / annualised std dev of returns. For short windows during drawdowns, the annualised return can be strongly negative, producing large negative Sharpe values — this reflects the extrapolated annual pace of loss, not the actual short-window loss."), /*#__PURE__*/React.createElement(RT, {
       m: d.risk,
       sn: sn,
       friM: showFRI ? d.risk : null,

@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-09-16.6 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-09-16.7 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ionic Allocate — Scheme Returns & Risk</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -478,14 +478,26 @@ function App() {
             sebiReturn = computeSEBIReturn(sebiInfo.d, sebiStartDate, endDate);
           }
 
+          var annPortfolio = portReturn, annBenchmark = bmReturn, annSebi = sebiReturn;
+          if (tw === "1Y" || tw === "SI") {
+            var d1 = new Date(startDate + "T00:00:00");
+            var d2 = new Date(endDate + "T00:00:00");
+            var days = Math.max(1, Math.round((d2 - d1) / 86400000));
+            var years = days / 365;
+            if (years > 0) {
+              annPortfolio = (Math.pow(1 + portReturn / 100, 1 / years) - 1) * 100;
+              if (bmReturn !== null) annBenchmark = (Math.pow(1 + bmReturn / 100, 1 / years) - 1) * 100;
+              if (sebiReturn !== null) annSebi = (Math.pow(1 + sebiReturn / 100, 1 / years) - 1) * 100;
+            }
+          }
           stratResults.push({
             strategy: strat.name,
             fullName: strat.fullName,
-            portfolio: portReturn,
-            benchmark: bmReturn,
-            active: bmReturn !== null ? portReturn - bmReturn : null,
-            sebiReturn: sebiReturn,
-            sebiActive: sebiReturn !== null ? portReturn - sebiReturn : null
+            portfolio: annPortfolio,
+            benchmark: annBenchmark,
+            active: annBenchmark !== null ? annPortfolio - annBenchmark : null,
+            sebiReturn: annSebi,
+            sebiActive: annSebi !== null ? annPortfolio - annSebi : null
           });
         }
       });
@@ -744,21 +756,22 @@ function App() {
               e("tr", null,
                 e("th", { style: { textAlign: "left" } }, "Strategy"),
                 timeWindowData.windows.map(function(tw) {
+                  var twLabel = (tw === "1Y" || tw === "SI") ? tw + " (ann.)" : tw;
                   var cols = [
-                    e("th", { key: tw + "-port" }, tw + ((showActive || showSEBI) ? " Port" : ""))
+                    e("th", { key: tw + "-port" }, twLabel + ((showActive || showSEBI) ? " Port" : ""))
                   ];
                   if (showActive) {
-                    cols.push(e("th", { key: tw + "-bm" }, tw + " FRI"));
-                    cols.push(e("th", { key: tw + "-act" }, tw + " Active"));
+                    cols.push(e("th", { key: tw + "-bm" }, twLabel + " FRI"));
+                    cols.push(e("th", { key: tw + "-act" }, twLabel + " Active"));
                   }
                   if (showSEBI) {
-                    cols.push(e("th", { key: tw + "-sebi" }, tw + " SEBI BM"));
-                    cols.push(e("th", { key: tw + "-sebiact", style: { borderRight: "2px solid #e2e8f0" } }, tw + " Active"));
+                    cols.push(e("th", { key: tw + "-sebi" }, twLabel + " SEBI BM"));
+                    cols.push(e("th", { key: tw + "-sebiact", style: { borderRight: "2px solid #e2e8f0" } }, twLabel + " Active"));
                   } else if (showActive) {
                     // put border on last active col
-                    cols[cols.length - 1] = e("th", { key: tw + "-act", style: { borderRight: "2px solid #e2e8f0" } }, tw + " Active");
+                    cols[cols.length - 1] = e("th", { key: tw + "-act", style: { borderRight: "2px solid #e2e8f0" } }, twLabel + " Active");
                   } else {
-                    cols[cols.length - 1] = e("th", { key: tw + "-port", style: { borderRight: "2px solid #e2e8f0" } }, tw);
+                    cols[cols.length - 1] = e("th", { key: tw + "-port", style: { borderRight: "2px solid #e2e8f0" } }, twLabel);
                   }
                   return cols;
                 })
@@ -870,6 +883,7 @@ function App() {
         // ── Risk Metrics Summary Table (visible under both Windows and Monthly views) ──
         e("div", { className: "table-card", style: { marginTop: 16 } },
           e("div", { className: "table-title" }, "Risk Metrics (Sharpe & Sortino)"),
+          e("div", { style: { fontSize: 11, color: "#6B7280", fontStyle: "italic", padding: "4px 12px 8px" } }, "Sharpe / Sortino = (annualised return − 6.5% risk-free) / annualised std dev of returns. For short windows during drawdowns, the annualised return can be strongly negative, producing large negative Sharpe values — this reflects the extrapolated annual pace of loss, not the actual short-window loss."),
           e("table", { id: "risk-summary-table" },
             e("thead", null,
               e("tr", null,
