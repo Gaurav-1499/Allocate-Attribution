@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- Build: v2026-09-16.4 | 2026-05-26 09:29 UTC -->
+<!-- Build: v2026-09-16.6 | 2026-05-26 09:29 UTC -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ionic Allocate — Scheme Returns & Risk</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -862,6 +862,48 @@ function App() {
                     return cols;
                   })
                 );
+              })
+            )
+          )
+        ),
+
+        // ── Risk Metrics Summary Table (visible under both Windows and Monthly views) ──
+        e("div", { className: "table-card", style: { marginTop: 16 } },
+          e("div", { className: "table-title" }, "Risk Metrics (Sharpe & Sortino)"),
+          e("table", { id: "risk-summary-table" },
+            e("thead", null,
+              e("tr", null,
+                e("th", { style: { textAlign: "left" } }, "Strategy / Metric"),
+                riskData.windows.map(function(tw) {
+                  return e("th", { key: "rm-h-" + tw, style: { textAlign: "right" } }, tw);
+                })
+              )
+            ),
+            e("tbody", null,
+              STRATEGIES.map(function(strat) {
+                var metricRows = [
+                  { label: "Fund Sharpe",   key: "fund-sh", color: "#111827", getVal: function(m) { return m ? m.sharpe : null; } },
+                  { label: "Fund Sortino",  key: "fund-so", color: "#111827", getVal: function(m) { return m ? m.sortino : null; } }
+                ];
+                if (showActive) {
+                  metricRows.push({ label: "FRI Sharpe",  key: "fri-sh",  color: "#EC4899", getVal: function(m) { return m ? m.bmSharpe : null; } });
+                  metricRows.push({ label: "FRI Sortino", key: "fri-so",  color: "#EC4899", getVal: function(m) { return m ? m.bmSortino : null; } });
+                }
+                if (showSEBI) {
+                  metricRows.push({ label: "SEBI Sharpe",  key: "sebi-sh", color: "#8B5CF6", getVal: function(m) { return m && m.sebi ? m.sebi.sharpe  : null; } });
+                  metricRows.push({ label: "SEBI Sortino", key: "sebi-so", color: "#8B5CF6", getVal: function(m) { return m && m.sebi ? m.sebi.sortino : null; } });
+                }
+                return metricRows.map(function(mr) {
+                  return e("tr", { key: strat.name + "-" + mr.key },
+                    e("td", { style: { color: mr.color, fontWeight: 500 } }, strat.fullName + " — " + mr.label),
+                    riskData.windows.map(function(tw) {
+                      var arr = riskData.results[tw] || [];
+                      var metrics = arr.find(function(r) { return r.strategy === strat.name; });
+                      var v = mr.getVal(metrics);
+                      return e("td", { key: strat.name + "-" + mr.key + "-" + tw, style: { textAlign: "right", fontFamily: "monospace", color: mr.color } }, fmtNum(v));
+                    })
+                  );
+                });
               })
             )
           )
